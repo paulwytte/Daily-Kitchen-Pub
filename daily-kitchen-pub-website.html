@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Kitchen & Pub</title>
+<meta name="description" content="Daily Kitchen & Pub — authentic African cuisine, drinks, delivery and catering. Order on WhatsApp.">
+<style>
+:root{--gold:#d8a83e;--dark:#111;--cream:#fff8ea;--muted:#6b6255}
+*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#171717;background:var(--cream);line-height:1.5}
+nav{position:sticky;top:0;z-index:10;background:#111;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:14px 6%;gap:20px}
+.logo{font-weight:800;color:var(--gold);letter-spacing:.5px}.navlinks{display:flex;gap:18px;flex-wrap:wrap}.navlinks a{color:#fff;text-decoration:none;font-size:14px}
+.hero{padding:80px 6%;background:linear-gradient(135deg,#111,#2b2110);color:#fff;text-align:center}
+.hero h1{font-size:clamp(38px,8vw,76px);margin:0;color:var(--gold)}.hero p{font-size:20px;max-width:700px;margin:14px auto 28px}
+.btn{display:inline-block;background:var(--gold);color:#111;padding:14px 22px;border-radius:30px;text-decoration:none;font-weight:800;margin:5px}
+section{padding:55px 6%;max-width:1200px;margin:auto}.title{text-align:center;margin-bottom:28px}.title h2{font-size:32px;margin:0}.title p{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}.card{background:#fff;border-radius:18px;padding:22px;box-shadow:0 5px 20px #00000012}.card h3{margin-top:0;color:#8a6418}.price{font-weight:800;color:#111}
+.menu{columns:2;column-gap:40px}.menu div{break-inside:avoid;padding:10px 0;border-bottom:1px solid #eee}
+.contact{background:#111;color:#fff;max-width:none;text-align:center}.contact h2{color:var(--gold)}
+footer{background:#080808;color:#bbb;text-align:center;padding:25px}
+@media(max-width:650px){.navlinks{display:none}.menu{columns:1}.hero{padding:60px 5%}section{padding:42px 5%}}
+</style>
+</head>
+<body>
+<nav>
+<div class="logo">DAILY KITCHEN & PUB</div>
+<div class="navlinks"><a href="#menu">Menu</a><a href="#drinks">Drinks</a><a href="#catering">Catering</a><a href="#contact">Contact</a></div>
+</nav>
+
+<header class="hero">
+<p>❤️ Where Food & Hearts Connect</p>
+<h1>Daily Kitchen & Pub</h1>
+<p>Authentic African cuisine, refreshing drinks, delivery and catering for your special occasions.</p>
+<a class="btn" href="https://wa.me/233241936496?text=Hi%20Daily%20Kitchen%20%26%20Pub%2C%20I%27d%20like%20to%20place%20an%20order." target="_blank">Order on WhatsApp</a>
+<a class="btn" href="#menu">View Menu</a>
+</header>
+
+<section id="menu">
+<div class="title"><h2>🍛 Food Menu</h2><p>Freshly prepared favourites.</p></div>
+<div class="grid">
+<div class="card"><h3>Local Dishes</h3><p>Banku & Okro with Tilapia</p><p>Banku with Tilapia Pepper</p><p>Banku with Grilled Tilapia</p><p>Banku with Salmon Pepper</p><p>Banku with Akple</p><p>Fufu with Goat Soup</p><p>Omotuo with Groundnut Soup</p><p>Abobitadi</p></div>
+<div class="card"><h3>Rice Dishes</h3><p>Jollof Rice with Goat Meat</p><p>Jollof Rice with Cow Meat</p><p>Assorted Jollof Rice Special</p><p>Assorted Fried Rice Special</p><p>Plain Rice with Egg Stew</p><p>Plain Rice with Egg Stew & Goat Meat</p><p>Plain Rice with Egg Stew & Cow Meat</p></div>
+<div class="card"><h3>Yam & Pasta</h3><p>Boiled Yam with Egg Stew</p><p>Fried Yam with Pork (Optional)</p><p>Assorted Spaghetti</p></div>
+<div class="card"><h3>Grills & Sides</h3><p>Turkey</p><p>Pork</p><p>Chicken Wings</p><p>Salad</p></div>
+<div class="card"><h3>Soups</h3><p>Goat Soup</p><p>Chicken Soup</p><p>Groundnut Soup</p><p>Palm Nut Soup</p></div>
+</div>
+</section>
+
+<section id="drinks">
+<div class="title"><h2>🥂 Drinks</h2><p>Ask us for the full drinks list and current prices.</p></div>
+<div class="grid">
+<div class="card"><h3>Soft Drinks</h3><p>Malt • B.B Cocktail • Alvaro • Sprite • Fanta • Uni Fresh • Ceres • Cranberry</p></div>
+<div class="card"><h3>Beer & Ciders</h3><p>Guinness • Club • Heineken • Stella • Budweiser • Orijin • Smirnoff Ice • Hunters • Savanna</p></div>
+<div class="card"><h3>Spirits & Wine</h3><p>Vodka • Tequila • Gin • Liquor • Wine • Champagne</p></div>
+</div>
+</section>
+
+<section id="catering">
+<div class="title"><h2>🎉 Catering & Events</h2><p>We cater for your special occasions.</p></div>
+<div class="grid">
+<div class="card"><h3>Birthdays</h3><p>Food and service for family and friends.</p></div>
+<div class="card"><h3>Weddings</h3><p>Let us help make your celebration memorable.</p></div>
+<div class="card"><h3>Corporate Events</h3><p>Professional food service for meetings and events.</p></div>
+<div class="card"><h3>Outdoor Catering</h3><p>Tell us what you are planning and we will discuss your needs.</p></div>
+</div>
+</section>
+
+<section id="contact" class="contact">
+<h2>📲 Order & Book</h2>
+<p>Message Daily Kitchen & Pub on WhatsApp.</p>
+<p><strong>0241936496</strong> &nbsp;|&nbsp; <strong>02719338376</strong></p>
+<a class="btn" href="https://wa.me/233241936496?text=Hi%20Daily%20Kitchen%20%26%20Pub%2C%20I%27d%20like%20to%20make%20an%20order%20or%20booking." target="_blank">WhatsApp Us</a>
+</section>
+
+<footer>© 2026 Daily Kitchen & Pub • Where Food & Hearts Connect</footer>
+</body>
+</html>
