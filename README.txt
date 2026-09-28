@@ -12,4 +12,4 @@ HOW TO USE:
 3. To publish it, upload the folder contents to a web host that supports static HTML.
 
 The WhatsApp buttons open a chat with 0241936496.
-The website also displays 02719338376 as a contact number.
+The website also displays 0271938376/0598192068 as a contact number.
