@@ -154,6 +154,7 @@ Eat • Drink • Relax",18));
 📍 Tema Community 18 & PramPram",17));
         heading("Catering & Events");
         content.addView(tv("Book us for parties, weddings, outdoor catering, corporate events and more.",17));
+        Button admin=btn("🔐 Staff / Admin Orders"); admin.setOnClickListener(v->adminLogin()); content.addView(admin);
         Button book=btn("🎉 Book Catering on WhatsApp"); book.setOnClickListener(v->openWhatsApp("Hello Daily Kitchen & Pub, I would like to make a catering/event booking.")); content.addView(book);
         heading("Special"); content.addView(tv("Saturday Special: Atieke, Fried Plantains & Tilapia — GHS 120",18));
     }
@@ -229,6 +230,47 @@ Eat • Drink • Relax",18));
         Button orders=btn("View My Orders"); orders.setOnClickListener(v->showOrders()); content.addView(orders);
     }
 
+    void adminLogin(){
+        final EditText pin=field("Staff PIN");
+        new AlertDialog.Builder(this).setTitle("Staff / Admin Login").setMessage("Enter the restaurant staff PIN to manage orders.")
+            .setView(pin).setPositiveButton("LOGIN",(d,w)->{
+                if("2026".equals(pin.getText().toString().trim())) showAdminOrders();
+                else Toast.makeText(this,"Incorrect PIN.",Toast.LENGTH_LONG).show();
+            }).setNegativeButton("Cancel",null).show();
+    }
+
+    void showAdminOrders(){
+        clear(); heading("Staff Order Dashboard");
+        content.addView(tv("Manage customer orders, totals, payment and preparation status.",17));
+        if(ordersPrefs.getAll().isEmpty()){content.addView(tv("No orders have been received on this device.",18));return;}
+        for(Map.Entry<String,?> e:ordersPrefs.getAll().entrySet()){
+            String id=e.getKey(); String summary=String.valueOf(e.getValue());
+            LinearLayout card=new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(10,8,10,8); card.setBackground(bg(DARK,18));
+            TextView t=tv(summary.replace(" | ","\\n"),16); card.addView(t);
+            LinearLayout actions=new LinearLayout(this);
+            Button confirm=btn("Confirm Order"); confirm.setOnClickListener(v->{updateOrderStatus(id,"Confirmed");showAdminOrders();});
+            Button paid=btn("Payment Confirmed"); paid.setOnClickListener(v->{updateOrderStatus(id,"Payment Confirmed");showAdminOrders();});
+            Button prep=btn("Preparing"); prep.setOnClickListener(v->{updateOrderStatus(id,"Preparing");showAdminOrders();});
+            Button ready=btn("Ready/Delivered"); ready.setOnClickListener(v->{updateOrderStatus(id,"Ready/Delivered");showAdminOrders();});
+            Button cancel=btn("Cancel"); cancel.setOnClickListener(v->{updateOrderStatus(id,"Cancelled");showAdminOrders();});
+            actions.addView(confirm,new LinearLayout.LayoutParams(0,55,1)); actions.addView(paid,new LinearLayout.LayoutParams(0,55,1));
+            actions.addView(prep,new LinearLayout.LayoutParams(0,55,1)); actions.addView(ready,new LinearLayout.LayoutParams(0,55,1)); actions.addView(cancel,new LinearLayout.LayoutParams(0,55,1));
+            card.addView(actions);
+            Button wa=btn("WhatsApp Customer"); wa.setOnClickListener(v->{
+                String phone=summary.split(" \\| ")[2].trim();
+                openWhatsAppTo(phone,"Daily Kitchen & Pub order "+id+" has been updated. Please contact us if you need assistance.");
+            }); card.addView(wa);
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,6,0,6);content.addView(card,p);
+        }
+    }
+
+    void openWhatsAppTo(String phone,String message){
+        String digits=phone.replaceAll("[^0-9]","");
+        if(digits.startsWith("0")) digits="233"+digits.substring(1);
+        Intent i=new Intent(Intent.ACTION_VIEW,Uri.parse("https://wa.me/"+digits+"?text="+enc(message)));
+        try{startActivity(i);}catch(Exception e){Toast.makeText(this,"WhatsApp is not installed.",Toast.LENGTH_LONG).show();}
+    }
+
     void showOrders(){
         clear(); heading("Orders");
         content.addView(tv("Orders saved on this device",17));
@@ -249,11 +291,8 @@ Eat • Drink • Relax",18));
 
     void updateOrderStatus(String id,String status){
         String old=ordersPrefs.getString(id,"");
-        if(old.contains(" | Pending")) old=old.replace(" | Pending"," | "+status);
-        else if(old.contains(" | Confirmed")) old=old.replace(" | Confirmed"," | "+status);
-        else if(old.contains(" | Preparing")) old=old.replace(" | Preparing"," | "+status);
-        else if(old.contains(" | Ready/Delivered")) old=old.replace(" | Ready/Delivered"," | "+status);
-        else if(old.contains(" | Cancelled")) old=old.replace(" | Cancelled"," | "+status);
+        int p=old.lastIndexOf(" | ");
+        if(p>=0) old=old.substring(0,p)+" | "+status;
         ordersPrefs.edit().putString(id,old).apply();
     }
 
