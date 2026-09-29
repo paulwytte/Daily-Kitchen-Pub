@@ -100,29 +100,24 @@ public class MainActivity extends Activity {
         "https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/images/drinks-menu.png"
     };
 
-    @Override public void onCreate(Bundle b){
-        super.onCreate(b);
-        buildShell();
-        showHome();
-    }
+    @Override public void onCreate(Bundle b){ super.onCreate(b); buildShell(); showHome(); }
 
     TextView tv(String s,int sp){
         TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(Color.WHITE);
-        t.setPadding(16,12,16,12); return t;
+        t.setTypeface(null,Typeface.BOLD); t.setPadding(16,12,16,12); return t;
     }
     Button btn(String s){
-        Button b=new Button(this); b.setText(s); b.setTextColor(Color.WHITE); b.setTextSize(13);
-        b.setAllCaps(false); b.setTextSize(14); b.setBackgroundColor(Color.rgb(45,45,45)); return b;
+        Button b=new Button(this); b.setText(s); b.setTextColor(Color.WHITE); b.setTextSize(14);
+        b.setAllCaps(false); b.setTypeface(null,Typeface.BOLD); b.setBackgroundColor(Color.rgb(45,45,45)); return b;
     }
-    GradientDrawable bg(int color,float radius){
-        GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g;
-    }
+    GradientDrawable bg(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
+
     void buildShell(){
         LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(BLACK);
         LinearLayout bar=new LinearLayout(this); bar.setGravity(Gravity.CENTER_VERTICAL);
         ImageView logo=new ImageView(this); logo.setImageResource(com.dailykitchenpub.app.R.drawable.daily_kitchen_logo);
         logo.setScaleType(ImageView.ScaleType.CENTER_CROP); bar.addView(logo,new LinearLayout.LayoutParams(70,70));
-        TextView title=tv("Daily Kitchen & Pub",20); title.setTypeface(null,1); title.setTextColor(GOLD);
+        TextView title=tv("Daily Kitchen & Pub",20); title.setTextColor(GOLD);
         bar.addView(title,new LinearLayout.LayoutParams(0,82,1));
         cartBadge=tv("🛒 0",15); cartBadge.setGravity(Gravity.CENTER); bar.addView(cartBadge,new LinearLayout.LayoutParams(70,70));
         root.addView(bar);
@@ -137,45 +132,45 @@ public class MainActivity extends Activity {
         }
         root.addView(nav);
         ScrollView scroll=new ScrollView(this); content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(12,12,12,40);
-        scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        setContentView(root);
+        scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1)); setContentView(root);
     }
 
     void clear(){content.removeAllViews();}
-    void heading(String s){TextView h=tv(s,24); h.setTextColor(GOLD); h.setTypeface(null,1); content.addView(h);}
+    void heading(String s){TextView h=tv(s,24); h.setTextColor(GOLD); content.addView(h);}
     void showHome(){
         clear();
         ImageView l=new ImageView(this); l.setImageResource(R.drawable.daily_kitchen_logo); l.setAdjustViewBounds(true); content.addView(l,new LinearLayout.LayoutParams(-1,300));
         heading("Where Food and Hearts Connect ❤️");
-        content.addView(tv("Good Food • Cold Drinks • Great Vibes\nEat • Drink • Relax",18));
+        content.addView(tv("Good Food • Cold Drinks • Great Vibes
+Eat • Drink • Relax",18));
         Button order=btn("🛒 Start an Order"); order.setOnClickListener(v->showMenu(FOOD)); content.addView(order);
         Button call=btn("☎ Call 0241936496"); call.setOnClickListener(v->startActivity(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+PHONE)))); content.addView(call);
         Button web=btn("🌐 Open Official Website"); web.setOnClickListener(v->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(WEBSITE)))); content.addView(web);
-        content.addView(tv("📞 0241936496  •  0271938376\n🔥 Hotline: 0598192068\n📍 Tema Community 18 & PramPram",17));
+        content.addView(tv("📞 0241936496  •  0271938376
+🔥 Hotline: 0598192068
+📍 Tema Community 18 & PramPram",17));
         heading("Catering & Events");
         content.addView(tv("Book us for parties, weddings, outdoor catering, corporate events and more.",17));
         Button book=btn("🎉 Book Catering on WhatsApp"); book.setOnClickListener(v->openWhatsApp("Hello Daily Kitchen & Pub, I would like to make a catering/event booking.")); content.addView(book);
-        heading("Special");
-        content.addView(tv("Saturday Special: Atieke, Fried Plantains & Tilapia — GHS 120",18));
+        heading("Special"); content.addView(tv("Saturday Special: Atieke, Fried Plantains & Tilapia — GHS 120",18));
     }
 
     void showMenu(String[][] data){
         clear();
-        Button homeBack=btn("← HOME");
-        homeBack.setTextColor(Color.BLACK);
-        homeBack.setTextSize(15);
-        homeBack.setBackgroundColor(Color.WHITE);
-        homeBack.setOnClickListener(v->showHome());
-        content.addView(homeBack,new LinearLayout.LayoutParams(-1,58));
+        Button homeBack=btn("← HOME"); homeBack.setTextColor(Color.BLACK); homeBack.setTextSize(15); homeBack.setBackgroundColor(Color.WHITE);
+        homeBack.setOnClickListener(v->showHome()); content.addView(homeBack,new LinearLayout.LayoutParams(-1,58));
         heading(data==FOOD?"Food Menu":"Drinks Menu");
         String last="";
         for(String[] row:data){
-            if(!row[0].equals(last)){TextView h=tv(row[0],20);h.setTextColor(GOLD);h.setTypeface(null,1);content.addView(h);last=row[0];}
+            if(!row[0].equals(last)){TextView h=tv(row[0],20);h.setTextColor(GOLD);content.addView(h);last=row[0];}
             Item item = row.length > 3 ? new Item(row[1],row[0],Integer.parseInt(row[2]),row[3]) : new Item(row[1],row[0],Integer.parseInt(row[2]));
-            LinearLayout card=new LinearLayout(this); card.setGravity(Gravity.CENTER_VERTICAL); card.setPadding(6,4,6,4); card.setBackground(bg(DARK,18));
-            TextView name=tv(row[1]+"\n"+item.priceLabel,17); card.addView(name,new LinearLayout.LayoutParams(0,70,1));
+            LinearLayout card=new LinearLayout(this); card.setGravity(Gravity.CENTER_VERTICAL); card.setPadding(8,4,8,4); card.setBackground(bg(DARK,18));
+            LinearLayout info=new LinearLayout(this); info.setOrientation(LinearLayout.VERTICAL); info.setGravity(Gravity.CENTER_VERTICAL);
+            TextView name=tv(row[1],17); name.setTypeface(null,Typeface.BOLD); info.addView(name);
+            TextView price=tv(item.priceLabel,18); price.setTextColor(GOLD); price.setTypeface(null,Typeface.BOLD); info.addView(price);
+            card.addView(info,new LinearLayout.LayoutParams(0,82,1));
             Button add=btn("Add"); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(88,60));
-            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,90);cp.setMargins(0,4,0,6);content.addView(card,cp);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,100);cp.setMargins(0,4,0,6);content.addView(card,cp);
         }
     }
 
@@ -188,25 +183,22 @@ public class MainActivity extends Activity {
         if(cart.isEmpty()){content.addView(tv("Your cart is empty. Add food or drinks first.",18));return;}
         cartList=new LinearLayout(this);cartList.setOrientation(LinearLayout.VERTICAL);content.addView(cartList);
         for(Map.Entry<Item,Integer> e:new ArrayList<>(cart.entrySet())){
-            Item i=e.getKey();int q=e.getValue();
-            LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);
+            Item i=e.getKey();int q=e.getValue(); LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);
             TextView t=tv(i.name+" × "+q+"\nGHS "+(i.price*q),17);row.addView(t,new LinearLayout.LayoutParams(0,65,1));
             Button minus=btn("−");minus.setOnClickListener(v->{if(cart.get(i)>1)cart.put(i,cart.get(i)-1);else cart.remove(i);showCart();updateBadge();});row.addView(minus,new LinearLayout.LayoutParams(55,55));
             Button plus=btn("+");plus.setOnClickListener(v->{add(i);showCart();});row.addView(plus,new LinearLayout.LayoutParams(55,55));cartList.addView(row);
         }
-        totalView=tv("TOTAL: GHS "+total(),20);totalView.setTextColor(GOLD);totalView.setTypeface(null,1);content.addView(totalView);
+        totalView=tv("TOTAL: GHS "+total(),20);totalView.setTextColor(GOLD);content.addView(totalView);
         Button clearBtn=btn("Clear Cart");clearBtn.setOnClickListener(v->{cart.clear();updateBadge();showCart();});content.addView(clearBtn);
         heading("Customer Details");
-        customerName=field("Full name");customerPhone=field("Phone number");
-        content.addView(customerName);content.addView(customerPhone);
-        LinearLayout choices=new LinearLayout(this);pickup=new RadioButton(this);pickup.setText("Pickup");pickup.setTextColor(Color.WHITE);pickup.setChecked(true);
-        delivery=new RadioButton(this);delivery.setText("Delivery");delivery.setTextColor(Color.WHITE);choices.addView(pickup);choices.addView(delivery);content.addView(choices);
-        deliveryAddress=field("Delivery address (required for delivery)");content.addView(deliveryAddress);
-        orderNotes=field("Order notes / special instructions");content.addView(orderNotes);
+        customerName=field("Full name");customerPhone=field("Phone number"); content.addView(customerName);content.addView(customerPhone);
+        LinearLayout choices=new LinearLayout(this);pickup=new RadioButton(this);pickup.setText("Pickup");pickup.setTextColor(Color.WHITE);pickup.setTypeface(null,Typeface.BOLD);pickup.setChecked(true);
+        delivery=new RadioButton(this);delivery.setText("Delivery");delivery.setTextColor(Color.WHITE);delivery.setTypeface(null,Typeface.BOLD);choices.addView(pickup);choices.addView(delivery);content.addView(choices);
+        deliveryAddress=field("Delivery address (required for delivery)");content.addView(deliveryAddress); orderNotes=field("Order notes / special instructions");content.addView(orderNotes);
         Button wa=btn("📲 Send Order to WhatsApp");wa.setOnClickListener(v->checkout());content.addView(wa);
     }
 
-    EditText field(String hint){EditText e=new EditText(this);e.setHint(hint);e.setHintTextColor(Color.LTGRAY);e.setTextColor(Color.WHITE);e.setTextSize(16);e.setSingleLine(false);e.setPadding(14,8,14,8);e.setBackground(bg(Color.rgb(35,35,35),14));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,58);p.setMargins(0,6,0,6);e.setLayoutParams(p);return e;}
+    EditText field(String hint){EditText e=new EditText(this);e.setHint(hint);e.setHintTextColor(Color.LTGRAY);e.setTextColor(Color.WHITE);e.setTextSize(16);e.setTypeface(null,Typeface.BOLD);e.setSingleLine(false);e.setPadding(14,8,14,8);e.setBackground(bg(Color.rgb(35,35,35),14));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,58);p.setMargins(0,6,0,6);e.setLayoutParams(p);return e;}
 
     void checkout(){
         String name=customerName.getText().toString().trim(),phone=customerPhone.getText().toString().trim();
@@ -214,36 +206,18 @@ public class MainActivity extends Activity {
         boolean isDelivery=delivery.isChecked();String addr=deliveryAddress.getText().toString().trim();
         if(isDelivery&&addr.isEmpty()){Toast.makeText(this,"Please enter the delivery address.",Toast.LENGTH_LONG).show();return;}
         StringBuilder s=new StringBuilder("Hello Daily Kitchen & Pub!%0A%0A*NEW ORDER*%0A");
-        s.append("Customer: ").append(enc(name)).append("%0APhone: ").append(enc(phone));
-        s.append("%0AMethod: ").append(enc(isDelivery?"Delivery":"Pickup"));
-        if(isDelivery)s.append("%0AAddress: ").append(enc(addr));
-        String notes=orderNotes.getText().toString().trim();if(!notes.isEmpty())s.append("%0ANotes: ").append(enc(notes));
-        s.append("%0A%0A*Items*%0A");
-        for(Map.Entry<Item,Integer>e:cart.entrySet())s.append(enc(e.getKey().name)).append(" x").append(e.getValue()).append(" = GHS ").append(e.getKey().price*e.getValue()).append("%0A");
-        s.append("%0A*TOTAL: GHS ").append(total()).append("*");
-        openWhatsApp(s.toString());
+        s.append("Customer: ").append(enc(name)).append("%0APhone: ").append(enc(phone)); s.append("%0AMethod: ").append(enc(isDelivery?"Delivery":"Pickup"));
+        if(isDelivery)s.append("%0AAddress: ").append(enc(addr)); String notes=orderNotes.getText().toString().trim();if(!notes.isEmpty())s.append("%0ANotes: ").append(enc(notes));
+        s.append("%0A%0A*Items*%0A"); for(Map.Entry<Item,Integer>e:cart.entrySet())s.append(enc(e.getKey().name)).append(" x").append(e.getValue()).append(" = GHS ").append(e.getKey().price*e.getValue()).append("%0A");
+        s.append("%0A*TOTAL: GHS ").append(total()).append("*"); openWhatsApp(s.toString());
     }
     String enc(String s){try{return URLEncoder.encode(s,StandardCharsets.UTF_8.toString()).replace("+","%20");}catch(Exception e){return s.replace(" ","%20");}}
-    void openWhatsApp(String message){
-        Intent i=new Intent(Intent.ACTION_VIEW,Uri.parse("https://wa.me/"+WHATSAPP+"?text="+message));
-        try{startActivity(i);}catch(Exception e){Toast.makeText(this,"WhatsApp is not installed.",Toast.LENGTH_LONG).show();}
-    }
+    void openWhatsApp(String message){Intent i=new Intent(Intent.ACTION_VIEW,Uri.parse("https://wa.me/"+WHATSAPP+"?text="+message));try{startActivity(i);}catch(Exception e){Toast.makeText(this,"WhatsApp is not installed.",Toast.LENGTH_LONG).show();}}
 
     void showPhotos(){
-        clear();heading("Food Photos");
-        content.addView(tv("Our food and menu gallery",17));
-        for(String url:photos){
-            ImageView iv=new ImageView(this);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.CENTER_CROP);content.addView(iv,new LinearLayout.LayoutParams(-1,240));
-            loadImage(url,iv);
-        }
+        clear();heading("Food Photos"); content.addView(tv("Our food and menu gallery",17));
+        for(String url:photos){ImageView iv=new ImageView(this);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.CENTER_CROP);content.addView(iv,new LinearLayout.LayoutParams(-1,240));loadImage(url,iv);}
     }
-    void loadImage(String url,ImageView target){
-        executor.submit(()->{
-            try(InputStream in=new URL(url).openStream()){
-                Bitmap b=BitmapFactory.decodeStream(in);
-                runOnUiThread(()->{if(b!=null)target.setImageBitmap(b);});
-            }catch(Exception ignored){}
-        });
-    }
+    void loadImage(String url,ImageView target){executor.submit(()->{try(InputStream in=new URL(url).openStream()){Bitmap b=BitmapFactory.decodeStream(in);runOnUiThread(()->{if(b!=null)target.setImageBitmap(b);});}catch(Exception ignored){}});}
     @Override protected void onDestroy(){executor.shutdownNow();super.onDestroy();}
 }
