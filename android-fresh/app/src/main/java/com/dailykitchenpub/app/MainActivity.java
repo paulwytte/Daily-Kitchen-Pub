@@ -30,8 +30,9 @@ public class MainActivity extends Activity {
     ExecutorService executor = Executors.newFixedThreadPool(3);
 
     static class Item {
-        String name, category; int price;
-        Item(String n, String c, int p){name=n;category=c;price=p;}
+        String name, category, priceLabel; int price;
+        Item(String n, String c, int p){name=n;category=c;price=p;priceLabel="GHS "+p;}
+        Item(String n, String c, int p, String label){name=n;category=c;price=p;priceLabel=label;}
         public boolean equals(Object o){return o instanceof Item && name.equals(((Item)o).name);}
         public int hashCode(){return name.hashCode();}
     }
@@ -63,29 +64,33 @@ public class MainActivity extends Activity {
         {"Beer","Guinness","15"},{"Beer","Mini Club","15"},{"Beer","Club Shandy","15"},{"Beer","Heineken Bottle","30"},
         {"Beer","Stella","30"},{"Beer","Budweiser","30"},{"Beer","Heineken Can","25"},{"Beer","Orijin","25"},
         {"Beer","Guilder","20"},{"Beer","Large Club","20"},{"Beer","Star","25"},{"Beer","Eagle","20"},
-        {"Ciders & Energy","Smirnoff Ice","25"},{"Ciders & Energy","Hunters Gold","25"},{"Ciders & Energy","Savanna Dry","25"},
-        {"Ciders & Energy","Kiss","30"},{"Ciders & Energy","Rox","30"},{"Ciders & Energy","Red Bull","30"},
-        {"Ciders & Energy","Vody","25"},{"Ciders & Energy","Black Bullet","25"},
+        {"Ciders & Energy","Smirnoff Ice","25","GHS 25 / 500"},{"Ciders & Energy","Hunters Gold","25","GHS 25 / 500"},
+        {"Ciders & Energy","Savanna Dry","25","GHS 25 / 500"},{"Ciders & Energy","Kiss","30"},{"Ciders & Energy","Rox","30"},
+        {"Ciders & Energy","Red Bull","30"},{"Ciders & Energy","Vody","25"},{"Ciders & Energy","Black Bullet","25"},
         {"Whisky","Johnnie Walker Red Label","120"},{"Whisky","Black Label","180"},{"Whisky","Jack Daniel’s","150"},
         {"Whisky","Jameson","150"},{"Whisky","Chivas Regal","200"},{"Whisky","Ballantine’s","120"},
-        {"Gin","Beefeater","25"},{"Gin","Gordon","25"},{"Gin","Gordon’s","100"},{"Gin","Castle Bridge","6"},
-        {"Gin","Alamo Black","6"},{"Gin","Mandingo","6"},{"Gin","Herbafrik","6"},
+        {"Gin","Beefeater","25","GHS 25 / 500"},{"Gin","Gordon","25","GHS 25 / 500"},{"Gin","Gordon’s","100"},
+        {"Gin","Castle Bridge","6"},{"Gin","Alamo Black","6"},{"Gin","Mandingo","6"},{"Gin","Herbafrik","6"},
         {"Mixers","Tonic Water","15"},{"Mixers","Soda Water","10"},{"Mixers","Lemonade","10"},{"Mixers","Ginger Ale","10"},
         {"Mixers","Orange Juice","10"},{"Mixers","Pineapple Juice","10"},{"Mixers","Cranberry Juice","10"},
         {"Wine","Condor Peak","250"},{"Wine","Dragon’s Back","250"},{"Wine","Four Special","250"},
         {"Wine","Scavi And Ray","200"},{"Wine","Robertson Winery","250"},{"Wine","Queeny","250"},
         {"Champagne","Veuve Du Vernay","300"},{"Champagne","Chamdor","250"},
-        {"Liquor","Baileys","30"},{"Liquor","Jager Meister","35"},{"Liquor","Campari","25"},
-        {"Vodka","Grey Goose","35"},{"Vodka","Absolute 70cl","30"},{"Vodka","Smirnoff Vodka","30"},
-        {"Vodka","Smirnoff Chocolate","25"},{"Vodka","Savoy Vodka","25"},{"Vodka","Smirnoff 20cl","110"},
-        {"Tequila","Olmeca Gold","35"},{"Tequila","Olmeca Silver","30"},{"Tequila","Agavita Gold","30"},
-        {"Tequila","Agavita Silver","25"},{"Tequila","Messicano Silver","25"},
+        {"Liquor","Baileys","30","GHS 30 / 550"},{"Liquor","Jager Meister","35","GHS 35 / 800"},{"Liquor","Campari","25","GHS 25 / 500"},
+        {"Vodka","Grey Goose","35","GHS 35 / 1200"},{"Vodka","Absolute 70cl","30","GHS 30 / 500"},
+        {"Vodka","Smirnoff Vodka","30","GHS 30 / 500"},{"Vodka","Smirnoff Chocolate","25","GHS 25 / 200"},
+        {"Vodka","Savoy Vodka","25","GHS 25 / 250"},{"Vodka","Smirnoff 20cl","110"},
+        {"Tequila","Olmeca Gold","35","GHS 35 / 500"},{"Tequila","Olmeca Silver","30","GHS 30 / 480"},
+        {"Tequila","Agavita Gold","30","GHS 30 / 400"},{"Tequila","Agavita Silver","25","GHS 25 / 380"},
+        {"Tequila","Messicano Silver","25","GHS 25 / 450"},
         {"Premium Whisky","Dusse","1800"},{"Premium Whisky","Double Black","1400"},{"Premium Whisky","Gold Label","1400"},
-        {"Premium Whisky","Jack Daniels","35"},{"Premium Whisky","Black Label","35"},{"Premium Whisky","Red Label","30"},
-        {"Premium Whisky","Jameson","30"},{"Premium Whisky","Ballantine","35"},
-        {"Cognac","Hennessy V.S.O.P","80"},{"Cognac","Hennessy V.S","65"},{"Cognac","Couvosier","65"},{"Cognac","Remy Martin","75"},
-        {"Rum","Malibu","30"},{"Rum","Baccadi Black","30"},{"Rum","Baccadi Gold","30"},{"Rum","St James White","30"},
-        {"Rum","Captain Morgan","30"},{"Rum","Bumbu Original","850"}
+        {"Premium Whisky","Jack Daniels","35","GHS 35 / 800"},{"Premium Whisky","Black Label","35","GHS 35 / 950"},
+        {"Premium Whisky","Red Label","30","GHS 30 / 600"},{"Premium Whisky","Jameson","30","GHS 30 / 650"},
+        {"Premium Whisky","Ballantine","35","GHS 35 / 650"},
+        {"Cognac","Hennessy V.S.O.P","80","GHS 80 / 200"},{"Cognac","Hennessy V.S","65","GHS 65 / 130"},
+        {"Cognac","Couvosier","65","GHS 65 / 130"},{"Cognac","Remy Martin","75","GHS 75 / 150"},
+        {"Rum","Malibu","30","GHS 30 / 500"},{"Rum","Baccadi Black","30","GHS 30 / 500"},{"Rum","Baccadi Gold","30","GHS 30 / 600"},
+        {"Rum","St James White","30","GHS 30 / 500"},{"Rum","Captain Morgan","30","GHS 30 / 500"},{"Rum","Bumbu Original","850"}
     };
 
     String[] photos = {
@@ -159,9 +164,9 @@ public class MainActivity extends Activity {
         String last="";
         for(String[] row:data){
             if(!row[0].equals(last)){TextView h=tv(row[0],18);h.setTextColor(GOLD);h.setTypeface(null,1);content.addView(h);last=row[0];}
-            Item item=new Item(row[1],row[0],Integer.parseInt(row[2]));
+            Item item = row.length > 3 ? new Item(row[1],row[0],Integer.parseInt(row[2]),row[3]) : new Item(row[1],row[0],Integer.parseInt(row[2]));
             LinearLayout card=new LinearLayout(this); card.setGravity(Gravity.CENTER_VERTICAL); card.setPadding(6,4,6,4); card.setBackground(bg(DARK,18));
-            TextView name=tv(row[1]+"\nGHS "+row[2],15); card.addView(name,new LinearLayout.LayoutParams(0,70,1));
+            TextView name=tv(row[1]+"\n"+item.priceLabel,15); card.addView(name,new LinearLayout.LayoutParams(0,70,1));
             Button add=btn("Add"); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(80,55));
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,78);cp.setMargins(0,4,0,6);content.addView(card,cp);
         }
