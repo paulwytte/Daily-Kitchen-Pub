@@ -32,10 +32,11 @@ jobs:
           curl -L --fail https://services.gradle.org/distributions/gradle-8.9-bin.zip -o /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /tmp
 
-      - name: Add Daily Kitchen & Pub logo
+      - name: Prepare Daily Kitchen & Pub logo
         run: |
           mkdir -p android-fresh/app/src/main/res/drawable
-          curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png -o android-fresh/app/src/main/res/drawable/daily_kitchen_logo.png
+          curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png -o /tmp/daily-kitchen-logo.png
+          convert /tmp/daily-kitchen-logo.png -strip android-fresh/app/src/main/res/drawable/daily_kitchen_logo.jpg
 
       - name: Build APK and AAB
         working-directory: android-fresh
