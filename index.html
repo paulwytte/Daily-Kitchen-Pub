@@ -100,6 +100,14 @@
  <a class="order-btn dark" href="#staff">🔐 Staff</a>
  <a class="order-btn green" href="tel:+233241936496">☎ Call Restaurant</a>
 </div>
+
+<!-- Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://wugmwunobthtidjrafek.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+</script>
 <script>
 const WA='233241936496';
 let cart=JSON.parse(localStorage.getItem('dkp_cart')||'[]');
