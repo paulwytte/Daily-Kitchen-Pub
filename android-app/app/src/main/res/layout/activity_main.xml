@@ -1,0 +1,116 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DAILY KITCHEN &amp; PUB"
+            android:textColor="@color/gold"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingTop="18dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Where Food and Hearts Connect ❤️"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/orderButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ORDER ON WHATSAPP"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/callButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CALL RESTAURANT"
+            android:layout_marginTop="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/websiteButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="OPEN OFFICIAL WEBSITE"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FOOD MENU"
+            android:textColor="@color/gold"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingTop="28dp"
+            android:paddingBottom="10dp" />
+
+        <TextView
+            android:id="@+id/foodMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:lineSpacingExtra="5dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DRINKS MENU"
+            android:textColor="@color/gold"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingTop="28dp"
+            android:paddingBottom="10dp" />
+
+        <TextView
+            android:id="@+id/drinksMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:lineSpacingExtra="5dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BOOK CATERING"
+            android:textColor="@color/gold"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingTop="28dp"
+            android:paddingBottom="10dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parties • Weddings • Outdoor Catering • Corporate Events • Birthdays &amp; More"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:paddingBottom="28dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hotline: 0598192068&#10;0241936496 • 0271938376"
+            android:textColor="@color/gold"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:paddingBottom="25dp" />
+    </LinearLayout>
+</ScrollView>
