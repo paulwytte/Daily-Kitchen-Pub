@@ -36,7 +36,7 @@ jobs:
         run: |
           mkdir -p android-fresh/app/src/main/res/drawable
           curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png -o /tmp/daily-kitchen-logo.png
-          convert /tmp/daily-kitchen-logo.png -strip android-fresh/app/src/main/res/drawable/daily_kitchen_logo.jpg
+          ffmpeg -y -loglevel error -i /tmp/daily-kitchen-logo.png -q:v 2 android-fresh/app/src/main/res/drawable/daily_kitchen_logo.jpg
 
       - name: Build APK and AAB
         working-directory: android-fresh
