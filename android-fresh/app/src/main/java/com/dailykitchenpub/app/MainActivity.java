@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import android.graphics.BitmapFactory;
+import android.content.SharedPreferences;
 
 public class MainActivity extends Activity {
     static final String WHATSAPP = "233241936496";
@@ -27,6 +28,7 @@ public class MainActivity extends Activity {
     final LinkedHashMap<Item, Integer> cart = new LinkedHashMap<>();
     EditText customerName, customerPhone, deliveryAddress, orderNotes;
     RadioButton pickup, delivery;
+    SharedPreferences ordersPrefs;
     ExecutorService executor = Executors.newFixedThreadPool(3);
 
     static class Item {
@@ -100,7 +102,7 @@ public class MainActivity extends Activity {
         "https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/images/drinks-menu.png"
     };
 
-    @Override public void onCreate(Bundle b){ super.onCreate(b); buildShell(); showHome(); }
+    @Override public void onCreate(Bundle b){ super.onCreate(b); ordersPrefs=getSharedPreferences("orders",MODE_PRIVATE); buildShell(); showHome(); }
 
     TextView tv(String s,int sp){
         TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(Color.WHITE);
@@ -122,13 +124,14 @@ public class MainActivity extends Activity {
         cartBadge=tv("🛒 0",15); cartBadge.setGravity(Gravity.CENTER); bar.addView(cartBadge,new LinearLayout.LayoutParams(70,70));
         root.addView(bar);
         LinearLayout nav=new LinearLayout(this); nav.setGravity(Gravity.CENTER); nav.setPadding(4,0,4,4);
-        String[] ns={"HOME","FOOD","DRINKS","PHOTOS","CART"};
+        String[] ns={"HOME","FOOD","DRINKS","PHOTOS","CART","ORDERS"};
         for(String n:ns){Button x=btn(n); nav.addView(x,new LinearLayout.LayoutParams(0,48,1));
             if(n.equals("HOME"))x.setOnClickListener(v->showHome());
             if(n.equals("FOOD"))x.setOnClickListener(v->showMenu(FOOD));
             if(n.equals("DRINKS"))x.setOnClickListener(v->showMenu(DRINKS));
             if(n.equals("PHOTOS"))x.setOnClickListener(v->showPhotos());
             if(n.equals("CART"))x.setOnClickListener(v->showCart());
+            if(n.equals("ORDERS"))x.setOnClickListener(v->showOrders());
         }
         root.addView(nav);
         ScrollView scroll=new ScrollView(this); content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(12,12,12,40);
@@ -209,8 +212,51 @@ Eat • Drink • Relax",18));
         s.append("Customer: ").append(enc(name)).append("%0APhone: ").append(enc(phone)); s.append("%0AMethod: ").append(enc(isDelivery?"Delivery":"Pickup"));
         if(isDelivery)s.append("%0AAddress: ").append(enc(addr)); String notes=orderNotes.getText().toString().trim();if(!notes.isEmpty())s.append("%0ANotes: ").append(enc(notes));
         s.append("%0A%0A*Items*%0A"); for(Map.Entry<Item,Integer>e:cart.entrySet())s.append(enc(e.getKey().name)).append(" x").append(e.getValue()).append(" = GHS ").append(e.getKey().price*e.getValue()).append("%0A");
-        s.append("%0A*TOTAL: GHS ").append(total()).append("*"); openWhatsApp(s.toString());
+        int orderTotal=total();
+        String orderId="DKP-"+System.currentTimeMillis();
+        String summary=orderId+" | "+name+" | "+phone+" | "+(isDelivery?"Delivery":"Pickup")+" | GHS "+orderTotal+" | Pending";
+        ordersPrefs.edit().putString(orderId,summary).apply();
+        s.append("%0A*ORDER ID: ").append(enc(orderId)).append("*%0A*TOTAL: GHS ").append(orderTotal).append("*");
+        openWhatsApp(s.toString());
+        showOrderConfirmation(orderId,name,orderTotal);
     }
+    void showOrderConfirmation(String id,String name,int amount){
+        clear(); heading("Order Submitted");
+        content.addView(tv("Thank you, "+name+"!",20));
+        content.addView(tv("Order ID: "+id+"\\nTotal: GHS "+amount+"\\nStatus: PENDING",18));
+        content.addView(tv("Your order has been sent to Daily Kitchen & Pub on WhatsApp. The restaurant can confirm it and update the order status.",17));
+        Button home=btn("← HOME"); home.setTextColor(Color.BLACK); home.setBackgroundColor(Color.WHITE); home.setOnClickListener(v->showHome()); content.addView(home);
+        Button orders=btn("View My Orders"); orders.setOnClickListener(v->showOrders()); content.addView(orders);
+    }
+
+    void showOrders(){
+        clear(); heading("Orders");
+        content.addView(tv("Orders saved on this device",17));
+        if(ordersPrefs.getAll().isEmpty()){content.addView(tv("No orders yet.",18));return;}
+        for(Map.Entry<String,?> e:ordersPrefs.getAll().entrySet()){
+            String id=e.getKey(); String summary=String.valueOf(e.getValue());
+            LinearLayout card=new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(10,8,10,8); card.setBackground(bg(DARK,18));
+            TextView t=tv(summary.replace(" | ","\\n"),16); card.addView(t);
+            LinearLayout actions=new LinearLayout(this);
+            Button confirm=btn("Confirm"); confirm.setOnClickListener(v->{updateOrderStatus(id,"Confirmed");showOrders();});
+            Button preparing=btn("Preparing"); preparing.setOnClickListener(v->{updateOrderStatus(id,"Preparing");showOrders();});
+            Button ready=btn("Ready/Delivered"); ready.setOnClickListener(v->{updateOrderStatus(id,"Ready/Delivered");showOrders();});
+            Button cancel=btn("Cancel"); cancel.setOnClickListener(v->{updateOrderStatus(id,"Cancelled");showOrders();});
+            actions.addView(confirm,new LinearLayout.LayoutParams(0,55,1)); actions.addView(preparing,new LinearLayout.LayoutParams(0,55,1)); actions.addView(ready,new LinearLayout.LayoutParams(0,55,1)); actions.addView(cancel,new LinearLayout.LayoutParams(0,55,1));
+            card.addView(actions); LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,6,0,6);content.addView(card,p);
+        }
+    }
+
+    void updateOrderStatus(String id,String status){
+        String old=ordersPrefs.getString(id,"");
+        if(old.contains(" | Pending")) old=old.replace(" | Pending"," | "+status);
+        else if(old.contains(" | Confirmed")) old=old.replace(" | Confirmed"," | "+status);
+        else if(old.contains(" | Preparing")) old=old.replace(" | Preparing"," | "+status);
+        else if(old.contains(" | Ready/Delivered")) old=old.replace(" | Ready/Delivered"," | "+status);
+        else if(old.contains(" | Cancelled")) old=old.replace(" | Cancelled"," | "+status);
+        ordersPrefs.edit().putString(id,old).apply();
+    }
+
     String enc(String s){try{return URLEncoder.encode(s,StandardCharsets.UTF_8.toString()).replace("+","%20");}catch(Exception e){return s.replace(" ","%20");}}
     void openWhatsApp(String message){Intent i=new Intent(Intent.ACTION_VIEW,Uri.parse("https://wa.me/"+WHATSAPP+"?text="+message));try{startActivity(i);}catch(Exception e){Toast.makeText(this,"WhatsApp is not installed.",Toast.LENGTH_LONG).show();}}
 
