@@ -6,8 +6,23 @@
 <meta name="description" content="Daily Kitchen & Pub — authentic Ghanaian food, drinks, delivery and catering. Order on WhatsApp.">
 <style>
 :root{--gold:#e6b93f;--black:#0a0a0a;--cream:#0a0a0a;--green:#15803d;--red:#c62828}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#050505 0%,#0a0a0a 55%,#1b1405 100%);color:#fff}nav{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.97);color:#fff;padding:12px 6%;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--gold)}.brand img{width:42px;height:42px;border-radius:50%;object-fit:cover}.links{display:flex;gap:20px;flex-wrap:wrap}.links a{color:#fff;text-decoration:none;font-size:14px}.links a:hover{color:var(--gold)}.hero{min-height:78vh;display:grid;place-items:center;text-align:center;padding:50px 6%;background:radial-gradient(circle at center,#3b2b0c,#080808 65%);color:#fff}.hero img{width:min(300px,72vw);border-radius:50%;box-shadow:0 0 45px #e6b93f66}.hero h1{font-size:clamp(36px,7vw,72px);margin:20px 0 5px;color:var(--gold)}.hero p{font-size:clamp(18px,3vw,25px);margin:8px auto;max-width:760px}.tag{font-weight:700;color:#fff}.btn{display:inline-block;margin:10px 6px;padding:14px 24px;border-radius:30px;background:var(--gold);color:#111;text-decoration:none;font-weight:800}.btn.whatsapp{background:#20b957;color:#fff}section{max-width:1200px;margin:auto;padding:65px 6%;background:linear-gradient(180deg,rgba(10,10,10,.96),rgba(35,25,5,.96));}.heading{text-align:center;margin-bottom:30px}.heading h2{font-size:36px;margin:0 0 8px}.heading p{color:#e6b93f}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}.card{background:#111;padding:25px;border-radius:20px;box-shadow:0 7px 25px #00000014;border:1px solid #f0dfb0}.card h3{color:#8d6617;margin-top:0}.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}.menu-card{background:#111;border:1px solid #efdca7;border-radius:18px;padding:20px;box-shadow:0 7px 22px #00000012}.menu-card h3{margin:0 0 12px;color:#8d6617;border-bottom:2px solid #f2e2b9;padding-bottom:10px}.item{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px dashed #ddd;line-height:1.35}.item:last-child{border-bottom:0}.price{font-weight:800;white-space:nowrap;color:var(--gold)}.note{margin-top:22px;padding:18px;border-radius:16px;background:#241c08;border-left:5px solid var(--gold)}.menu-img{display:block;width:auto;max-width:100%;height:auto;object-fit:contain;margin:25px auto;border-radius:18px;box-shadow:0 10px 30px #0003;image-rendering:auto}#menu{display:block}.menu-gallery{display:block;background:#111;border:1px solid var(--gold);border-radius:18px;padding:20px;margin-top:24px}.menu-gallery h3{color:var(--gold);margin-top:0}.gallery-card{display:inline-block;vertical-align:top;width:48%;margin:1%;background:#0a0a0a;border-radius:14px;padding:10px;text-align:center}.gallery-card img{display:block;width:100%;height:auto;max-height:420px;object-fit:contain;border-radius:10px}.gallery-card p{color:#fff;font-weight:700}@media(max-width:700px){.gallery-card{width:100%;margin:6px 0}}.event{background:#111;color:#fff;max-width:none}.event .inner{max-width:1200px;margin:auto}.event h2{color:var(--gold)}.contact{background:#0b0b0b;color:#fff;max-width:none;text-align:center}.contact h2{color:var(--gold)}.phone{font-size:22px;font-weight:800;color:#fff}footer{background:#050505;color:#aaa;text-align:center;padding:28px 6%}.small{font-size:13px;color:#777}@media(max-width:700px){#menu{display:block}.links{display:none}.hero{min-height:72vh}.hero img{width:220px}section{padding:48px 5%}.heading h2{font-size:30px}.item{font-size:15px}}
+
+/* Ordering system */
+.order-bar{position:sticky;bottom:0;z-index:30;background:#080808ee;border-top:1px solid var(--gold);padding:12px 5%;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;backdrop-filter:blur(8px)}
+.order-btn{background:var(--gold);color:#111;border:0;border-radius:25px;padding:12px 18px;font-weight:800;cursor:pointer;text-decoration:none}
+.order-btn.dark{background:#fff;color:#111}.order-btn.green{background:#20b957;color:#fff}
+.add-btn{margin-left:auto;background:var(--gold);border:0;border-radius:10px;padding:7px 10px;font-weight:900;cursor:pointer;color:#111;white-space:nowrap}
+.item{align-items:center}.item-main{display:flex;flex-direction:column;gap:2px}.item-price{color:var(--gold);font-weight:900}
+.qty-row{display:flex;align-items:center;gap:8px;margin-top:8px}.qty-row button{border:0;border-radius:7px;padding:5px 10px;font-weight:900;cursor:pointer}.qty{min-width:24px;text-align:center}
+.cart-box,.admin-box{background:#111;border:1px solid var(--gold);border-radius:18px;padding:20px;box-shadow:0 8px 25px #0005}
+.cart-line{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px dashed #555}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.form-grid input,.form-grid textarea,.form-grid select{width:100%;padding:13px;border-radius:10px;border:1px solid #777;background:#080808;color:#fff}
+.total{font-size:24px;color:var(--gold);font-weight:900;text-align:right;margin:18px 0}
+.status{display:inline-block;padding:5px 9px;border-radius:12px;background:#2b2208;color:var(--gold);font-weight:800;font-size:12px}
+.history-card{background:#0b0b0b;border:1px solid #444;border-radius:12px;padding:14px;margin:10px 0}
+@media(max-width:700px){.cart-line{grid-template-columns:1fr}.add-btn{margin-left:0}.order-bar{bottom:0}}
 </style></head><body>
-<nav><div class="brand"><img src="logo.png" alt="Daily Kitchen & Pub logo"><span>Daily Kitchen & Pub</span></div><div class="links"><a href="#about">About</a><a href="#menu">Food</a><a href="#drinks">Drinks</a><a href="#catering">Catering</a><a href="#contact">Contact</a></div></nav>
+<nav><div class="brand"><img src="logo.png" alt="Daily Kitchen & Pub logo"><span>Daily Kitchen & Pub</span></div><div class="links"><a href="#about">About</a><a href="#menu">🍛 Food</a><a href="#drinks">🥂 Drinks</a><a href="#cart">🛒 Cart</a><a href="#orders">📋 Orders</a><a href="#catering">Catering</a><a href="#contact">Contact</a></div></nav>
 <header class="hero"><div><img src="logo.png" alt="Daily Kitchen & Pub"><h1>Daily Kitchen & Pub</h1><p class="tag">Where Food and Hearts Connect ❤️</p><p>Authentic African cuisine • Great drinks • Catering • Delivery</p><a class="btn whatsapp" href="https://wa.me/233241936496?text=Hi%20Daily%20Kitchen%20%26%20Pub%2C%20I%27d%20like%20to%20place%20an%20order." target="_blank">Order on WhatsApp</a><a class="btn" href="#menu">View Prices</a></div></header>
 <section id="about"><div class="heading"><h2>Welcome ❤️</h2><p>Good Food • Great Vibes • Always!</p></div><div class="cards"><div class="card"><h3>🍛 Authentic African Cuisine</h3><p>Enjoy favourites including banku, tilapia, jollof, fufu, soups, yam and more.</p></div><div class="card"><h3>🚚 Delivery Available</h3><p>Message us on WhatsApp to ask about your order and delivery.</p></div><div class="card"><h3>🎉 Events & Catering</h3><p>We cater for parties, weddings, birthdays, corporate events, outdoor catering and more.</p></div></div></section>
 <section id="menu"><div class="heading"><h2>🍛 Food Menu & Prices</h2><p>All prices are shown in Ghana Cedis (GHS).</p></div><aside class="menu-gallery"><h3>✨ Food Photos</h3>
@@ -33,6 +48,114 @@
 <div class="menu-card"><h3>Premium Whisky</h3><div class="item"><span>Dusse</span><span class="price">GHS 1800</span></div><div class="item"><span>Double Black</span><span class="price">GHS 1400</span></div><div class="item"><span>Gold Label</span><span class="price">GHS 1400</span></div><div class="item"><span>Jack Daniels</span><span class="price">GHS 35 / 800</span></div><div class="item"><span>Black Label</span><span class="price">GHS 35 / 950</span></div><div class="item"><span>Red Label</span><span class="price">GHS 30 / 600</span></div><div class="item"><span>Jameson</span><span class="price">GHS 30 / 650</span></div><div class="item"><span>Ballantine</span><span class="price">GHS 35 / 650</span></div></div>
 <div class="menu-card"><h3>Cognac</h3><div class="item"><span>Hennessy V.S.O.P</span><span class="price">GHS 80 / 200</span></div><div class="item"><span>Hennessy V.S</span><span class="price">GHS 65 / 130</span></div><div class="item"><span>Couvosier</span><span class="price">GHS 65 / 130</span></div><div class="item"><span>Remy Martin</span><span class="price">GHS 75 / 150</span></div></div>
 <div class="menu-card"><h3>Rum</h3><div class="item"><span>Malibu</span><span class="price">GHS 30 / 500</span></div><div class="item"><span>Baccadi Black</span><span class="price">GHS 30 / 500</span></div><div class="item"><span>Baccadi Gold</span><span class="price">GHS 30 / 600</span></div><div class="item"><span>St James White</span><span class="price">GHS 30 / 500</span></div><div class="item"><span>Captain Morgan</span><span class="price">GHS 30 / 500</span></div><div class="item"><span>Bumbu Original</span><span class="price">GHS 850</span></div></div><p style="text-align:center"><a class="btn whatsapp" href="https://wa.me/233241936496?text=Hi%20Daily%20Kitchen%20%26%20Pub%2C%20I%27d%20like%20to%20order%20drinks." target="_blank">Ask About Drinks</a></p></section>
+
+<section id="cart">
+ <div class="heading"><h2>🛒 Your Cart</h2><p>Choose quantities and review your GHS total before checkout.</p></div>
+ <div class="cart-box">
+  <div id="cartItems"><p>Your cart is empty. Add food or drinks above.</p></div>
+  <div class="total">Total: <span id="cartTotal">GHS 0.00</span></div>
+  <div style="text-align:center"><button class="order-btn" onclick="document.getElementById('checkout').scrollIntoView({behavior:'smooth'})">Proceed to Checkout</button> <button class="order-btn dark" onclick="clearCart()">Clear Cart</button></div>
+ </div>
+</section>
+
+<section id="checkout">
+ <div class="heading"><h2>🧾 Checkout</h2><p>Enter your details and choose pickup or delivery.</p></div>
+ <div class="cart-box">
+  <form id="orderForm" onsubmit="submitOrder(event)">
+   <div class="form-grid">
+    <label>👤 Full name<input id="customerName" required placeholder="Your full name"></label>
+    <label>☎ Phone number<input id="customerPhone" required type="tel" placeholder="024..."></label>
+    <label>📍 Order type<select id="orderType" onchange="toggleAddress()"><option value="pickup">Pickup</option><option value="delivery">Delivery</option></select></label>
+    <label id="addressWrap" style="display:none">📍 Delivery address<input id="deliveryAddress" placeholder="Delivery location/address"></label>
+   </div>
+   <label style="display:block;margin-top:14px">📝 Order notes<textarea id="orderNotes" rows="3" placeholder="Special instructions"></textarea></label>
+   <p style="margin-top:16px"><strong>Order total:</strong> <span id="checkoutTotal" class="price">GHS 0.00</span></p>
+   <button class="order-btn green" type="submit">📲 Place Order on WhatsApp</button>
+  </form>
+ </div>
+</section>
+
+<section id="orders">
+ <div class="heading"><h2>📋 My Order History</h2><p>Your orders saved on this browser.</p></div>
+ <div id="orderHistory" class="cart-box"></div>
+</section>
+
+<section id="staff">
+ <div class="heading"><h2>🔐 Staff / Admin</h2><p>Restaurant order management.</p></div>
+ <div class="admin-box" id="adminLogin">
+  <label>Staff PIN <input id="staffPin" type="password" inputmode="numeric" maxlength="8" placeholder="Enter staff PIN"></label>
+  <button class="order-btn" style="margin-top:12px" onclick="staffLogin()">Login</button>
+ </div>
+ <div class="admin-box" id="adminPanel" style="display:none">
+  <h3>👨🏾‍🍳 Order Dashboard</h3><div id="adminOrders"></div>
+ </div>
+</section>
 <section class="event" id="catering"><div class="inner"><div class="heading"><h2>🎉 Catering & Events</h2><p style="color:#ddd">Book us for your special occasion.</p></div><div class="cards"><div class="card"><h3>Birthdays</h3><p>Food service for celebrations and gatherings.</p></div><div class="card"><h3>Weddings</h3><p>Discuss your food and catering needs with us.</p></div><div class="card"><h3>Corporate Events</h3><p>Food service for meetings, functions and corporate gatherings.</p></div><div class="card"><h3>Outdoor Catering</h3><p>Parties, outdoor events and other special occasions.</p></div></div></div></section>
 <section id="contact" class="contact"><h2>📲 Order or Make a Booking</h2><p>Message us on WhatsApp and we'll get back to you.</p><p class="phone"><strong>Hotline:</strong> 0598192068<br><span style="font-size:18px">0241936496 &nbsp; / &nbsp; 0271938376</span></p><p>📍 Tema Community 18 & PramPram</p><a class="btn whatsapp" href="https://wa.me/233241936496?text=Hi%20Daily%20Kitchen%20%26%20Pub%2C%20I%27d%20like%20to%20make%20an%20order%20or%20booking." target="_blank">Message Us on WhatsApp</a></section>
-<footer><p><strong>Daily Kitchen & Pub</strong> — Where Food and Hearts Connect ❤️</p><p class="small">© 2026 Daily Kitchen & Pub. All rights reserved.</p></footer></body></html>
+<footer><p><strong>Daily Kitchen & Pub</strong> — Where Food and Hearts Connect ❤️</p><p class="small">© 2026 Daily Kitchen & Pub. All rights reserved.</p></footer>
+<div class="order-bar">
+ <a class="order-btn" href="#menu">🍽️ Menu</a>
+ <a class="order-btn" href="#cart">🛒 Cart <span id="cartBadge">0</span></a>
+ <a class="order-btn" href="#orders">📋 Orders</a>
+ <a class="order-btn dark" href="#staff">🔐 Staff</a>
+ <a class="order-btn green" href="tel:+233241936496">☎ Call Restaurant</a>
+</div>
+<script>
+const WA='233241936496';
+let cart=JSON.parse(localStorage.getItem('dkp_cart')||'[]');
+
+function money(n){return 'GHS '+Number(n).toFixed(2)}
+function saveCart(){localStorage.setItem('dkp_cart',JSON.stringify(cart));renderCart()}
+function priceFromText(t){const m=t.replace(/,/g,'').match(/GHS\s*(\d+(?:\.\d+)?)/i);return m?Number(m[1]):0}
+function addItem(name,price,label){const x=cart.find(i=>i.name===name&&i.label===label);if(x)x.qty++;else cart.push({name,price,label,qty:1});saveCart()}
+function changeQty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart()}
+function clearCart(){cart=[];saveCart()}
+function cartTotal(){return cart.reduce((a,i)=>a+i.price*i.qty,0)}
+function renderCart(){
+ const box=document.getElementById('cartItems'), total=cartTotal();
+ document.getElementById('cartTotal').textContent=money(total);document.getElementById('checkoutTotal').textContent=money(total);
+ document.getElementById('cartBadge').textContent=cart.reduce((a,i)=>a+i.qty,0);
+ if(!cart.length){box.innerHTML='<p>Your cart is empty. Add food or drinks above.</p>';return}
+ box.innerHTML=cart.map((i,n)=>'<div class="cart-line"><div><strong>'+i.name+'</strong><br><span class="small">'+i.label+'</span></div><div class="qty-row"><button onclick="changeQty('+n+',-1)">−</button><span class="qty">'+i.qty+'</span><button onclick="changeQty('+n+',1)">+</button></div><strong class="price">'+money(i.price*i.qty)+'</strong></div>').join('')
+}
+function toggleAddress(){document.getElementById('addressWrap').style.display=document.getElementById('orderType').value==='delivery'?'block':'none'}
+function normalizePhone(p){p=p.replace(/\D/g,'');if(p.startsWith('0'))return '233'+p.slice(1);return p}
+function submitOrder(e){
+ e.preventDefault();
+ if(!cart.length){alert('Please add at least one item to your cart.');location.hash='#menu';return}
+ const type=document.getElementById('orderType').value,address=document.getElementById('deliveryAddress').value.trim();
+ if(type==='delivery'&&!address){alert('Please enter your delivery address.');return}
+ const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),notes=document.getElementById('orderNotes').value.trim();
+ const order={id,name,phone,type,address,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
+ const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
+ const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('%0A');
+ const msg='Daily Kitchen & Pub Order%0AOrder ID: '+encodeURIComponent(id)+'%0AName: '+encodeURIComponent(name)+'%0APhone: '+encodeURIComponent(phone)+'%0AType: '+encodeURIComponent(type)+(address?'%0AAddress: '+encodeURIComponent(address):'')+'%0A%0AItems:%0A'+lines+'%0A%0ATotal: '+encodeURIComponent(money(order.total))+(notes?'%0ANotes: '+encodeURIComponent(notes):'');
+ cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
+ window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
+ location.hash='#orders';
+}
+function renderHistory(){
+ const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+ if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
+ box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
+}
+function staffLogin(){
+ if(document.getElementById('staffPin').value==='2026'){document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';renderAdmin()}
+ else alert('Incorrect staff PIN.')
+}
+function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
+function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
+function renderAdmin(){
+ const box=document.getElementById('adminOrders');if(!box||document.getElementById('adminPanel').style.display==='none')return;
+ const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+ if(!orders.length){box.innerHTML='<p>No orders received on this browser yet.</p>';return}
+ box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+}
+document.querySelectorAll('.item').forEach(el=>{
+ const priceEl=el.querySelector('.price'); if(!priceEl)return;
+ const name=el.querySelector('span:first-child').textContent.trim(),label=priceEl.textContent.trim(),price=priceFromText(label);
+ const b=document.createElement('button');b.className='add-btn';b.textContent='ADD '+label;b.onclick=()=>addItem(name,price,label);el.appendChild(b)
+});
+renderCart();renderHistory();toggleAddress();
+</script>
+</body></html>
