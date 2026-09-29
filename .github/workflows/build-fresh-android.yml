@@ -46,7 +46,7 @@ jobs:
           )
           PY
 
-      - name: Apply clear prices to ADD buttons
+      - name: Apply clear prices and Java string fixes
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -54,9 +54,11 @@ jobs:
           s = p.read_text()
           old = 'Button add=btn("Add"); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(88,60));'
           new = 'Button add=btn("ADD\\n"+item.priceLabel); add.setTextSize(12); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(105,60));'
-          if old not in s:
-              raise SystemExit('Expected ADD button code not found')
-          p.write_text(s.replace(old, new))
+          if old in s:
+              s = s.replace(old, new)
+          s = s.replace('Good Food • Cold Drinks • Great Vibes\nEat • Drink • Relax', 'Good Food • Cold Drinks • Great Vibes\\nEat • Drink • Relax')
+          s = s.replace('📞 0241936496  •  0271938376\n🔥 Hotline: 0598192068\n📍 Tema Community 18 & PramPram', '📞 0241936496  •  0271938376\\n🔥 Hotline: 0598192068\\n📍 Tema Community 18 & PramPram')
+          p.write_text(s)
           PY
 
       - name: Build APK and AAB
