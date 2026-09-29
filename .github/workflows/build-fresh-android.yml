@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - android-fresh-build
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -33,7 +36,7 @@ jobs:
       - name: Add Daily Kitchen & Pub logo
         run: |
           mkdir -p android-fresh/app/src/main/res/drawable
-          curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png             -o android-fresh/app/src/main/res/drawable/daily_kitchen_logo.png
+          curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png -o android-fresh/app/src/main/res/drawable/daily_kitchen_logo.png
 
       - name: Build APK and AAB
         working-directory: android-fresh
