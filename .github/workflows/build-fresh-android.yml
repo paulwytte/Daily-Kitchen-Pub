@@ -34,9 +34,17 @@ jobs:
 
       - name: Prepare Daily Kitchen & Pub logo
         run: |
+          python3 -m pip install --quiet Pillow
           mkdir -p android-fresh/app/src/main/res/drawable
           curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png -o /tmp/daily-kitchen-logo.png
-          ffmpeg -y -loglevel error -i /tmp/daily-kitchen-logo.png -q:v 2 android-fresh/app/src/main/res/drawable/daily_kitchen_logo.jpg
+          python3 - <<'PY'
+          from PIL import Image
+          Image.open('/tmp/daily-kitchen-logo.png').convert('RGB').save(
+              'android-fresh/app/src/main/res/drawable/daily_kitchen_logo.jpg',
+              quality=92,
+              optimize=True
+          )
+          PY
 
       - name: Build APK and AAB
         working-directory: android-fresh
