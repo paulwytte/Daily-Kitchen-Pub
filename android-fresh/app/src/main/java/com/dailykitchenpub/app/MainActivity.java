@@ -162,9 +162,9 @@ public class MainActivity extends Activity {
     void showMenu(String[][] data){
         clear();
         Button homeBack=btn("← HOME");
-        homeBack.setTextColor(Color.WHITE);
+        homeBack.setTextColor(Color.BLACK);
         homeBack.setTextSize(15);
-        homeBack.setBackgroundColor(Color.BLACK);
+        homeBack.setBackgroundColor(Color.WHITE);
         homeBack.setOnClickListener(v->showHome());
         content.addView(homeBack,new LinearLayout.LayoutParams(-1,58));
         heading(data==FOOD?"Food Menu":"Drinks Menu");
