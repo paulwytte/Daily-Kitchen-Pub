@@ -112,7 +112,7 @@ public class MainActivity extends Activity {
     }
     Button btn(String s){
         Button b=new Button(this); b.setText(s); b.setTextColor(Color.WHITE); b.setTextSize(13);
-        b.setAllCaps(false); b.setBackgroundColor(Color.rgb(45,45,45)); return b;
+        b.setAllCaps(false); b.setTextSize(14); b.setBackgroundColor(Color.rgb(45,45,45)); return b;
     }
     GradientDrawable bg(int color,float radius){
         GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g;
@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
         ImageView logo=new ImageView(this); logo.setImageResource(com.dailykitchenpub.app.R.drawable.daily_kitchen_logo);
         logo.setScaleType(ImageView.ScaleType.CENTER_CROP); bar.addView(logo,new LinearLayout.LayoutParams(70,70));
         TextView title=tv("Daily Kitchen & Pub",20); title.setTypeface(null,1); title.setTextColor(GOLD);
-        bar.addView(title,new LinearLayout.LayoutParams(0,70,1));
+        bar.addView(title,new LinearLayout.LayoutParams(0,82,1));
         cartBadge=tv("🛒 0",15); cartBadge.setGravity(Gravity.CENTER); bar.addView(cartBadge,new LinearLayout.LayoutParams(70,70));
         root.addView(bar);
         LinearLayout nav=new LinearLayout(this); nav.setGravity(Gravity.CENTER); nav.setPadding(4,0,4,4);
@@ -147,28 +147,28 @@ public class MainActivity extends Activity {
         clear();
         ImageView l=new ImageView(this); l.setImageResource(R.drawable.daily_kitchen_logo); l.setAdjustViewBounds(true); content.addView(l,new LinearLayout.LayoutParams(-1,300));
         heading("Where Food and Hearts Connect ❤️");
-        content.addView(tv("Good Food • Cold Drinks • Great Vibes\nEat • Drink • Relax",16));
+        content.addView(tv("Good Food • Cold Drinks • Great Vibes\nEat • Drink • Relax",18));
         Button order=btn("🛒 Start an Order"); order.setOnClickListener(v->showMenu(FOOD)); content.addView(order);
         Button call=btn("☎ Call 0241936496"); call.setOnClickListener(v->startActivity(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+PHONE)))); content.addView(call);
         Button web=btn("🌐 Open Official Website"); web.setOnClickListener(v->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(WEBSITE)))); content.addView(web);
-        content.addView(tv("📞 0241936496  •  0271938376\n🔥 Hotline: 0598192068\n📍 Tema Community 18 & PramPram",15));
+        content.addView(tv("📞 0241936496  •  0271938376\n🔥 Hotline: 0598192068\n📍 Tema Community 18 & PramPram",17));
         heading("Catering & Events");
-        content.addView(tv("Book us for parties, weddings, outdoor catering, corporate events and more.",15));
+        content.addView(tv("Book us for parties, weddings, outdoor catering, corporate events and more.",17));
         Button book=btn("🎉 Book Catering on WhatsApp"); book.setOnClickListener(v->openWhatsApp("Hello Daily Kitchen & Pub, I would like to make a catering/event booking.")); content.addView(book);
         heading("Special");
-        content.addView(tv("Saturday Special: Atieke, Fried Plantains & Tilapia — GHS 120",16));
+        content.addView(tv("Saturday Special: Atieke, Fried Plantains & Tilapia — GHS 120",18));
     }
 
     void showMenu(String[][] data){
         clear(); heading(data==FOOD?"Food Menu":"Drinks Menu");
         String last="";
         for(String[] row:data){
-            if(!row[0].equals(last)){TextView h=tv(row[0],18);h.setTextColor(GOLD);h.setTypeface(null,1);content.addView(h);last=row[0];}
+            if(!row[0].equals(last)){TextView h=tv(row[0],20);h.setTextColor(GOLD);h.setTypeface(null,1);content.addView(h);last=row[0];}
             Item item = row.length > 3 ? new Item(row[1],row[0],Integer.parseInt(row[2]),row[3]) : new Item(row[1],row[0],Integer.parseInt(row[2]));
             LinearLayout card=new LinearLayout(this); card.setGravity(Gravity.CENTER_VERTICAL); card.setPadding(6,4,6,4); card.setBackground(bg(DARK,18));
-            TextView name=tv(row[1]+"\n"+item.priceLabel,15); card.addView(name,new LinearLayout.LayoutParams(0,70,1));
-            Button add=btn("Add"); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(80,55));
-            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,78);cp.setMargins(0,4,0,6);content.addView(card,cp);
+            TextView name=tv(row[1]+"\n"+item.priceLabel,17); card.addView(name,new LinearLayout.LayoutParams(0,70,1));
+            Button add=btn("Add"); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(88,60));
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,90);cp.setMargins(0,4,0,6);content.addView(card,cp);
         }
     }
 
@@ -178,12 +178,12 @@ public class MainActivity extends Activity {
 
     void showCart(){
         clear(); heading("Your Order");
-        if(cart.isEmpty()){content.addView(tv("Your cart is empty. Add food or drinks first.",16));return;}
+        if(cart.isEmpty()){content.addView(tv("Your cart is empty. Add food or drinks first.",18));return;}
         cartList=new LinearLayout(this);cartList.setOrientation(LinearLayout.VERTICAL);content.addView(cartList);
         for(Map.Entry<Item,Integer> e:new ArrayList<>(cart.entrySet())){
             Item i=e.getKey();int q=e.getValue();
             LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);
-            TextView t=tv(i.name+" × "+q+"\nGHS "+(i.price*q),15);row.addView(t,new LinearLayout.LayoutParams(0,65,1));
+            TextView t=tv(i.name+" × "+q+"\nGHS "+(i.price*q),17);row.addView(t,new LinearLayout.LayoutParams(0,65,1));
             Button minus=btn("−");minus.setOnClickListener(v->{if(cart.get(i)>1)cart.put(i,cart.get(i)-1);else cart.remove(i);showCart();updateBadge();});row.addView(minus,new LinearLayout.LayoutParams(55,55));
             Button plus=btn("+");plus.setOnClickListener(v->{add(i);showCart();});row.addView(plus,new LinearLayout.LayoutParams(55,55));cartList.addView(row);
         }
@@ -199,7 +199,7 @@ public class MainActivity extends Activity {
         Button wa=btn("📲 Send Order to WhatsApp");wa.setOnClickListener(v->checkout());content.addView(wa);
     }
 
-    EditText field(String hint){EditText e=new EditText(this);e.setHint(hint);e.setHintTextColor(Color.LTGRAY);e.setTextColor(Color.WHITE);e.setSingleLine(false);e.setPadding(14,8,14,8);e.setBackground(bg(Color.rgb(35,35,35),14));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,58);p.setMargins(0,6,0,6);e.setLayoutParams(p);return e;}
+    EditText field(String hint){EditText e=new EditText(this);e.setHint(hint);e.setHintTextColor(Color.LTGRAY);e.setTextColor(Color.WHITE);e.setTextSize(16);e.setSingleLine(false);e.setPadding(14,8,14,8);e.setBackground(bg(Color.rgb(35,35,35),14));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,58);p.setMargins(0,6,0,6);e.setLayoutParams(p);return e;}
 
     void checkout(){
         String name=customerName.getText().toString().trim(),phone=customerPhone.getText().toString().trim();
@@ -224,7 +224,7 @@ public class MainActivity extends Activity {
 
     void showPhotos(){
         clear();heading("Food Photos");
-        content.addView(tv("Our food and menu gallery",15));
+        content.addView(tv("Our food and menu gallery",17));
         for(String url:photos){
             ImageView iv=new ImageView(this);iv.setAdjustViewBounds(true);iv.setScaleType(ImageView.ScaleType.CENTER_CROP);content.addView(iv,new LinearLayout.LayoutParams(-1,240));
             loadImage(url,iv);
