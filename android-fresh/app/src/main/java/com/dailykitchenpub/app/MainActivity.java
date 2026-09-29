@@ -160,7 +160,14 @@ public class MainActivity extends Activity {
     }
 
     void showMenu(String[][] data){
-        clear(); heading(data==FOOD?"Food Menu":"Drinks Menu");
+        clear();
+        Button homeBack=btn("← HOME");
+        homeBack.setTextColor(Color.WHITE);
+        homeBack.setTextSize(15);
+        homeBack.setBackgroundColor(Color.BLACK);
+        homeBack.setOnClickListener(v->showHome());
+        content.addView(homeBack,new LinearLayout.LayoutParams(-1,58));
+        heading(data==FOOD?"Food Menu":"Drinks Menu");
         String last="";
         for(String[] row:data){
             if(!row[0].equals(last)){TextView h=tv(row[0],20);h.setTextColor(GOLD);h.setTypeface(null,1);content.addView(h);last=row[0];}
