@@ -54,14 +54,14 @@ drop policy if exists "staff can read orders" on public.orders;
 create policy "staff can read orders"
 on public.orders for select
 to authenticated
-using ((select auth.jwt() -> 'app_metadata' ->> 'role') in ('staff','admin'));
+using (auth.uid() = '06cab660-af20-49aa-abc4-4e0f2211826a'::uuid);
 
 drop policy if exists "staff can update orders" on public.orders;
 create policy "staff can update orders"
 on public.orders for update
 to authenticated
-using ((select auth.jwt() -> 'app_metadata' ->> 'role') in ('staff','admin'))
-with check ((select auth.jwt() -> 'app_metadata' ->> 'role') in ('staff','admin'));
+using (auth.uid() = '06cab660-af20-49aa-abc4-4e0f2211826a'::uuid)
+with check (auth.uid() = '06cab660-af20-49aa-abc4-4e0f2211826a'::uuid);
 
 drop policy if exists "staff can read order items" on public.order_items;
 create policy "staff can read order items"
@@ -71,7 +71,7 @@ using (
   exists (
     select 1 from public.orders o
     where o.id = order_items.order_id
-      and (select auth.jwt() -> 'app_metadata' ->> 'role') in ('staff','admin')
+      and auth.uid() = '06cab660-af20-49aa-abc4-4e0f2211826a'::uuid
   )
 );
 
