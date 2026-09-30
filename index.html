@@ -86,7 +86,15 @@
   <label>Email <input id="staffEmail" type="email" value="linkwytte@gmail.com" autocomplete="username" placeholder="Staff email"></label>
   <label style="display:block;margin-top:12px">Password <input id="staffPassword" type="password" autocomplete="current-password" placeholder="Enter password"></label>
   <button class="order-btn" style="margin-top:12px" onclick="staffLogin()">Login</button>
+  <button type="button" class="order-btn dark" style="margin-top:10px" onclick="forgotPassword()">Forgot password?</button>
   <p id="staffLoginMsg" class="small" style="margin-top:10px"></p>
+ </div>
+ <div class="admin-box" id="resetPasswordBox" style="display:none;margin-top:14px">
+  <h3>🔑 Reset Staff Password</h3>
+  <label>New password <input id="newStaffPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Enter new password"></label>
+  <label style="display:block;margin-top:12px">Confirm new password <input id="confirmStaffPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Confirm new password"></label>
+  <button class="order-btn" style="margin-top:12px" onclick="saveNewPassword()">Set New Password</button>
+  <p id="resetPasswordMsg" class="small" style="margin-top:10px"></p>
  </div>
  <div class="admin-box" id="adminPanel" style="display:none">
   <h3>👨🏾‍🍳 Order Dashboard</h3><div id="adminOrders"></div>
@@ -155,6 +163,32 @@ async function staffLogin(){
  if(!data.user || data.user.id!==STAFF_UID){await supabaseClient.auth.signOut();msg.textContent='This account is not authorized for Staff/Admin access.';return}
  document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';msg.textContent='';renderAdmin()
 }
+async function forgotPassword(){
+ const email=document.getElementById('staffEmail').value.trim(),msg=document.getElementById('staffLoginMsg');
+ if(!email){msg.textContent='Enter your staff email first.';return}
+ msg.textContent='Sending password reset email...';
+ const redirectTo=window.location.origin+window.location.pathname;
+ const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
+ msg.textContent=error?'Reset failed: '+error.message:'Password reset email sent. Check your email and open the reset link.';
+}
+async function saveNewPassword(){
+ const p=document.getElementById('newStaffPassword').value,c=document.getElementById('confirmStaffPassword').value,msg=document.getElementById('resetPasswordMsg');
+ if(p.length<6){msg.textContent='Password must be at least 6 characters.';return}
+ if(p!==c){msg.textContent='Passwords do not match.';return}
+ msg.textContent='Updating password...';
+ const {data,error}=await supabaseClient.auth.updateUser({password:p});
+ if(error){msg.textContent='Password update failed: '+error.message;return}
+ msg.textContent='Password changed successfully. You can now log in.';
+ document.getElementById('resetPasswordBox').style.display='none';
+ await supabaseClient.auth.signOut();
+}
+supabaseClient.auth.onAuthStateChange((event)=>{
+ if(event==='PASSWORD_RECOVERY'){
+   document.getElementById('adminLogin').style.display='none';
+   document.getElementById('resetPasswordBox').style.display='block';
+   document.getElementById('resetPasswordMsg').textContent='Enter and confirm your new password.';
+ }
+})
 function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
 function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
 function renderAdmin(){
