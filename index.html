@@ -81,21 +81,13 @@
 </section>
 
 <section id="staff">
- <div class="heading"><h2>🔐 Staff / Admin</h2><p>Secure restaurant order management.</p></div>
+ <div class="heading"><h2>🔐 Staff / Admin</h2><p>Restaurant order management.</p></div>
  <div class="admin-box" id="adminLogin">
-  <label>Staff email<input id="staffEmail" type="email" autocomplete="username" placeholder="Staff email"></label>
-  <label style="display:block;margin-top:12px">Password<input id="staffPassword" type="password" autocomplete="current-password" placeholder="Staff password"></label>
-  <div style="margin-top:12px">
-   <button class="order-btn" onclick="staffLogin()">Login</button>
-   <button class="order-btn dark" onclick="resetAdminPassword()">Forgot password</button>
-  </div>
-  <p id="staffAuthMessage" class="small" style="margin-top:12px"></p>
+  <label>Staff PIN <input id="staffPin" type="password" inputmode="numeric" maxlength="8" placeholder="Enter staff PIN"></label>
+  <button class="order-btn" style="margin-top:12px" onclick="staffLogin()">Login</button>
  </div>
  <div class="admin-box" id="adminPanel" style="display:none">
-  <h3>👨🏾‍🍳 Order Dashboard</h3>
-  <p id="staffSignedInAs" class="small"></p>
-  <button class="order-btn dark" onclick="adminLogout()">Log out</button>
-  <p id="statusMessage" class="small" style="margin-top:10px"></p><div id="adminOrders" style="margin-top:14px"></div>
+  <h3>👨🏾‍🍳 Order Dashboard</h3><div id="adminOrders"></div>
  </div>
 </section>
 <section class="event" id="catering"><div class="inner"><div class="heading"><h2>🎉 Catering & Events</h2><p style="color:#ddd">Book us for your special occasion.</p></div><div class="cards"><div class="card"><h3>Birthdays</h3><p>Food service for celebrations and gatherings.</p></div><div class="card"><h3>Weddings</h3><p>Discuss your food and catering needs with us.</p></div><div class="card"><h3>Corporate Events</h3><p>Food service for meetings, functions and corporate gatherings.</p></div><div class="card"><h3>Outdoor Catering</h3><p>Parties, outdoor events and other special occasions.</p></div></div></div></section>
@@ -108,14 +100,6 @@
  <a class="order-btn dark" href="#staff">🔐 Staff</a>
  <a class="order-btn green" href="tel:+233241936496">☎ Call Restaurant</a>
 </div>
-
-<!-- Supabase client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL="https://wugmwunobthtidjrafek.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-</script>
 <script>
 const WA='233241936496';
 let cart=JSON.parse(localStorage.getItem('dkp_cart')||'[]');
@@ -136,106 +120,36 @@ function renderCart(){
 }
 function toggleAddress(){document.getElementById('addressWrap').style.display=document.getElementById('orderType').value==='delivery'?'block':'none'}
 function normalizePhone(p){p=p.replace(/\D/g,'');if(p.startsWith('0'))return '233'+p.slice(1);return p}
-async function submitOrder(e){
+function submitOrder(e){
  e.preventDefault();
  if(!cart.length){alert('Please add at least one item to your cart.');location.hash='#menu';return}
  const type=document.getElementById('orderType').value,address=document.getElementById('deliveryAddress').value.trim();
  if(type==='delivery'&&!address){alert('Please enter your delivery address.');return}
  const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),notes=document.getElementById('orderNotes').value.trim();
  const order={id,name,phone,type,address,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
- const {error}=await supabaseClient.from('orders').insert({
-  order_id:id,customer_name:name,phone,order_type:type,address:address||null,notes:notes||null,
-  items:order.items,total:order.total,status:'Confirmed',created_at:order.created
- });
- if(error){alert('Could not save your order. Please try again.');console.error(error);return}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
  const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('%0A');
  const msg='Daily Kitchen & Pub Order%0AOrder ID: '+encodeURIComponent(id)+'%0AName: '+encodeURIComponent(name)+'%0APhone: '+encodeURIComponent(phone)+'%0AType: '+encodeURIComponent(type)+(address?'%0AAddress: '+encodeURIComponent(address):'')+'%0A%0AItems:%0A'+lines+'%0A%0ATotal: '+encodeURIComponent(money(order.total))+(notes?'%0ANotes: '+encodeURIComponent(notes):'');
- cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();await renderAdmin();
+ cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
  location.hash='#orders';
 }
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
- const activeOrders=orders.filter(o=>o.status!=='Cancelled');
- if(!activeOrders.length){box.innerHTML='<p>No active orders yet.</p>';return}
- box.innerHTML=activeOrders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p><button type="button" class="order-btn dark" onclick="cancelCustomerOrder(\\''+o.id+'\\');return false">Cancel Order</button></div>').join('')
+ if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
+ box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
 }
-async function cancelCustomerOrder(id){
- const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
- const order=orders.find(o=>o.id===id);
- if(!order||order.status==='Cancelled')return;
- if(!confirm('Cancel order '+id+'?'))return;
- const {error}=await supabaseClient.from('orders').update({status:'Cancelled'}).eq('order_id',id);
- if(error){alert('Could not cancel this order. Please try again.');console.error(error);return}
- order.status='Cancelled';
- localStorage.setItem('dkp_orders',JSON.stringify(orders));
- renderHistory();
+function staffLogin(){
+ if(document.getElementById('staffPin').value==='2026'){document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';renderAdmin()}
+ else alert('Incorrect staff PIN.')
 }
-const ADMIN_USER_ID='06cab660-af20-49aa-abc4-4e0f2211826a';
-async function staffLogin(){
- const email=document.getElementById('staffEmail').value.trim();
- const password=document.getElementById('staffPassword').value;
- const msg=document.getElementById('staffAuthMessage');
- if(!email||!password){msg.textContent='Enter your staff email and password.';return}
- msg.textContent='Signing in...';
- const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
- if(error){msg.textContent='Login failed. Check your email and password.';return}
- if(!data.user||data.user.id!==ADMIN_USER_ID){
-   await supabaseClient.auth.signOut();
-   msg.textContent='This account is not authorized for Staff/Admin access.';
-   return;
- }
- showAdminForUser(data.user);
-}
-async function resetAdminPassword(){
- const email=document.getElementById('staffEmail').value.trim();
- const msg=document.getElementById('staffAuthMessage');
- if(!email){msg.textContent='Enter your staff email first.';return}
- const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname+'#staff'});
- msg.textContent=error?'Could not send the reset email.':'Password reset email sent. Check your email.';
-}
-function showAdminForUser(user){
- if(!user||user.id!==ADMIN_USER_ID)return;
- document.getElementById('adminLogin').style.display='none';
- document.getElementById('adminPanel').style.display='block';
- document.getElementById('staffSignedInAs').textContent='Signed in securely as Staff/Admin.';
- renderAdmin();
-}
-async function checkStaffSession(){
- const {data}=await supabaseClient.auth.getUser();
- if(data.user&&data.user.id===ADMIN_USER_ID) showAdminForUser(data.user);
-}
-async function adminLogout(){
- await supabaseClient.auth.signOut();
- document.getElementById('adminLogin').style.display='block';
- document.getElementById('adminPanel').style.display='none';
- document.getElementById('staffPassword').value='';
- document.getElementById('staffAuthMessage').textContent='You have been logged out.';
-}
-async function setStatus(id,status){
- const box=document.getElementById('adminOrders');
- const result=document.getElementById('statusMessage');
- if(result)result.textContent='Updating '+id+' to '+status+'...';
- const {error}=await supabaseClient.from('orders').update({status:status}).eq('order_id',id);
- if(error){
-  if(result)result.textContent='Update failed: '+error.message;
-  console.error('Status update error:',error);
-  return;
- }
- const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);
- if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders))}
- if(result)result.textContent='Order '+id+' is now '+status+'.';
- renderHistory();await renderAdmin();
-}
+function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
 function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
-async function renderAdmin(){
+function renderAdmin(){
  const box=document.getElementById('adminOrders');if(!box||document.getElementById('adminPanel').style.display==='none')return;
- box.innerHTML='<p>Loading orders...</p>';
- const {data:orders,error}=await supabaseClient.from('orders').select('*').order('created_at',{ascending:false});
- if(error){box.innerHTML='<p>Could not load orders. Please refresh or log in again.</p>';console.error(error);return}
- if(!orders.length){box.innerHTML='<p>No orders received yet.</p>';return}
- box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.order_id+'</strong> <span class="status">'+o.status+'</span><p>🕒 '+new Date(o.created_at).toLocaleString()+'<br>👤 '+o.customer_name+' — '+o.phone+'<br>📍 '+(o.order_type==='delivery'?(o.address||''):'Pickup')+'<br>'+((o.items||[]).map(x=>x.qty+' × '+x.name).join(', '))+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button type="button" onclick="setStatus(\''+o.order_id+'\',\'Confirmed\');return false">Confirmed</button><button type="button" onclick="setStatus(\''+o.order_id+'\',\'Payment Confirmed\');return false">Payment Confirmed</button><button type="button" onclick="setStatus(\''+o.order_id+'\',\'Preparing\');return false">Preparing</button><button type="button" onclick="setStatus(\''+o.order_id+'\',\'Ready/Delivered\');return false">Ready/Delivered</button><button type="button" onclick="setStatus(\''+o.order_id+'\',\'Cancelled\');return false">Cancel</button><button type="button" onclick="contactCustomer(\''+o.phone+'\',\''+String(o.customer_name||'').replace(/'/g,"\\'")+'\',\''+o.order_id+'\');return false">📲 WhatsApp Customer</button></div></div>').join('')
+ const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+ if(!orders.length){box.innerHTML='<p>No orders received on this browser yet.</p>';return}
+ box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
 }
 document.querySelectorAll('.item').forEach(el=>{
  const priceEl=el.querySelector('.price'); if(!priceEl)return;
@@ -243,13 +157,5 @@ document.querySelectorAll('.item').forEach(el=>{
  const b=document.createElement('button');b.className='add-btn';b.textContent='ADD '+label;b.onclick=()=>addItem(name,price,label);el.appendChild(b)
 });
 renderCart();renderHistory();toggleAddress();
-supabaseClient.auth.onAuthStateChange((event,session)=>{
- if(session&&session.user&&session.user.id===ADMIN_USER_ID) showAdminForUser(session.user);
- if(event==='SIGNED_OUT'){
-  document.getElementById('adminLogin').style.display='block';
-  document.getElementById('adminPanel').style.display='none';
- }
-});
-checkStaffSession();
 </script>
 </body></html>
