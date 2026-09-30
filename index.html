@@ -136,17 +136,29 @@ function renderCart(){
 }
 function toggleAddress(){document.getElementById('addressWrap').style.display=document.getElementById('orderType').value==='delivery'?'block':'none'}
 function normalizePhone(p){p=p.replace(/\D/g,'');if(p.startsWith('0'))return '233'+p.slice(1);return p}
-function submitOrder(e){
+async function submitOrder(e){
  e.preventDefault();
  if(!cart.length){alert('Please add at least one item to your cart.');location.hash='#menu';return}
  const type=document.getElementById('orderType').value,address=document.getElementById('deliveryAddress').value.trim();
  if(type==='delivery'&&!address){alert('Please enter your delivery address.');return}
  const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),notes=document.getElementById('orderNotes').value.trim();
  const order={id,name,phone,type,address,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
+ let remoteSaved=false;
+ try{
+   const {data,error}=await supabaseClient.from('orders').insert({
+     order_code:id,customer_name:name,customer_phone:phone,fulfillment_type:type,delivery_address:address||null,order_notes:notes||null,total_ghs:order.total,status:'Confirmed'
+   }).select('id').single();
+   if(error)throw error;
+   const rows=order.items.map(x=>({order_id:data.id,item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
+   const {error:itemError}=await supabaseClient.from('order_items').insert(rows);
+   if(itemError)throw itemError;
+   remoteSaved=true;
+ }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
  const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('%0A');
  const msg='Daily Kitchen & Pub Order%0AOrder ID: '+encodeURIComponent(id)+'%0AName: '+encodeURIComponent(name)+'%0APhone: '+encodeURIComponent(phone)+'%0AType: '+encodeURIComponent(type)+(address?'%0AAddress: '+encodeURIComponent(address):'')+'%0A%0AItems:%0A'+lines+'%0A%0ATotal: '+encodeURIComponent(money(order.total))+(notes?'%0ANotes: '+encodeURIComponent(notes):'');
  cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
+ if(!remoteSaved) alert('Order saved on this device. Online sync is temporarily unavailable.');
  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
  location.hash='#orders';
 }
@@ -155,47 +167,32 @@ function renderHistory(){
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
  box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
 }
-async function staffLogin(){
- const email=document.getElementById('staffEmail').value.trim(),password=document.getElementById('staffPassword').value;
- const msg=document.getElementById('staffLoginMsg'); msg.textContent='Signing in...';
- const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
- if(error){msg.textContent='Login failed: '+error.message;return}
- if(!data.user || data.user.id!==STAFF_UID){await supabaseClient.auth.signOut();msg.textContent='This account is not authorized for Staff/Admin access.';return}
- document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';msg.textContent='';renderAdmin()
+async function loadRemoteOrders(){
+ const {data,error}=await supabaseClient.from('orders').select('id,order_code,customer_name,customer_phone,fulfillment_type,delivery_address,order_notes,total_ghs,status,created_at,order_items(item_name,unit_price_ghs,quantity,line_total_ghs)').order('created_at',{ascending:false});
+ if(error)throw error;
+ return (data||[]).map(o=>({id:o.order_code,name:o.customer_name,phone:o.customer_phone,type:o.fulfillment_type,address:o.delivery_address||'',notes:o.order_notes||'',total:Number(o.total_ghs),status:o.status,created:o.created_at,items:(o.order_items||[]).map(x=>({name:x.item_name,price:Number(x.unit_price_ghs),qty:Number(x.quantity),label:money(Number(x.unit_price_ghs))}))}));
 }
-async function forgotPassword(){
- const email=document.getElementById('staffEmail').value.trim(),msg=document.getElementById('staffLoginMsg');
- if(!email){msg.textContent='Enter your staff email first.';return}
- msg.textContent='Sending password reset email...';
- const redirectTo=window.location.origin+window.location.pathname;
- const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
- msg.textContent=error?'Reset failed: '+error.message:'Password reset email sent. Check your email and open the reset link.';
+async function setStatus(id,status){
+ const local=JSON.parse(localStorage.getItem('dkp_orders')||'[]'),o=local.find(x=>x.id===id);
+ if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(local));}
+ const {error}=await supabaseClient.from('orders').update({status}).eq('order_code',id);
+ if(error)console.warn('Online status update failed:',error);
+ renderHistory();await renderAdmin();
 }
-async function saveNewPassword(){
- const p=document.getElementById('newStaffPassword').value,c=document.getElementById('confirmStaffPassword').value,msg=document.getElementById('resetPasswordMsg');
- if(p.length<6){msg.textContent='Password must be at least 6 characters.';return}
- if(p!==c){msg.textContent='Passwords do not match.';return}
- msg.textContent='Updating password...';
- const {data,error}=await supabaseClient.auth.updateUser({password:p});
- if(error){msg.textContent='Password update failed: '+error.message;return}
- msg.textContent='Password changed successfully. You can now log in.';
- document.getElementById('resetPasswordBox').style.display='none';
- await supabaseClient.auth.signOut();
-}
-supabaseClient.auth.onAuthStateChange((event)=>{
- if(event==='PASSWORD_RECOVERY'){
-   document.getElementById('adminLogin').style.display='none';
-   document.getElementById('resetPasswordBox').style.display='block';
-   document.getElementById('resetPasswordMsg').textContent='Enter and confirm your new password.';
- }
-})
-function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
 function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
-function renderAdmin(){
+async function renderAdmin(){
  const box=document.getElementById('adminOrders');if(!box||document.getElementById('adminPanel').style.display==='none')return;
- const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
- if(!orders.length){box.innerHTML='<p>No orders received on this browser yet.</p>';return}
- box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+ box.innerHTML='<p>Loading orders...</p>';
+ try{
+   const orders=await loadRemoteOrders();
+   if(!orders.length){box.innerHTML='<p>No orders received yet.</p>';return}
+   box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+ }catch(err){
+   console.warn('Could not load online orders:',err);
+   const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+   if(!orders.length){box.innerHTML='<p>No online orders available. Check Supabase order setup.</p>';return}
+   box.innerHTML='<p class="small">Online orders are temporarily unavailable. Showing orders saved on this device.</p>'+orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p></div>').join('');
+ }
 }
 document.querySelectorAll('.item').forEach(el=>{
  const priceEl=el.querySelector('.price'); if(!priceEl)return;
