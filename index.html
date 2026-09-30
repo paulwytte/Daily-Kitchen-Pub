@@ -202,14 +202,20 @@ async function adminLogout(){
  document.getElementById('staffAuthMessage').textContent='You have been logged out.';
 }
 async function setStatus(id,status){
- const {error}=await supabaseClient.from('orders').updateasync function renderAdmin(){
+ const {error}=await supabaseClient.from('orders').update({status}).eq('order_id',id);
+ if(error){alert('Could not update order status. Please try again.');console.error(error);return}
+ const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);
+ if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders))}
+ renderHistory();await renderAdmin();
+}
+function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
+async function renderAdmin(){
  const box=document.getElementById('adminOrders');if(!box||document.getElementById('adminPanel').style.display==='none')return;
  box.innerHTML='<p>Loading orders...</p>';
  const {data:orders,error}=await supabaseClient.from('orders').select('*').order('created_at',{ascending:false});
  if(error){box.innerHTML='<p>Could not load orders. Please refresh or log in again.</p>';console.error(error);return}
  if(!orders.length){box.innerHTML='<p>No orders received yet.</p>';return}
  box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.order_id+'</strong> <span class="status">'+o.status+'</span><p>🕒 '+new Date(o.created_at).toLocaleString()+'<br>👤 '+o.customer_name+' — '+o.phone+'<br>📍 '+(o.order_type==='delivery'?(o.address||''):'Pickup')+'<br>'+((o.items||[]).map(x=>x.qty+' × '+x.name).join(', '))+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.order_id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.order_id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.order_id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.order_id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.order_id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+String(o.customer_name||'').replace(/'/g,"\\'")+'\',\''+o.order_id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
-}row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
 }
 document.querySelectorAll('.item').forEach(el=>{
  const priceEl=el.querySelector('.price'); if(!priceEl)return;
