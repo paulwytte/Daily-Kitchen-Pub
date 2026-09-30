@@ -157,8 +157,20 @@ async function submitOrder(e){
 }
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
- if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
- box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
+ const activeOrders=orders.filter(o=>o.status!=='Cancelled');
+ if(!activeOrders.length){box.innerHTML='<p>No active orders yet.</p>';return}
+ box.innerHTML=activeOrders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p><button type="button" class="order-btn dark" onclick="cancelCustomerOrder(\\''+o.id+'\\');return false">Cancel Order</button></div>').join('')
+}
+async function cancelCustomerOrder(id){
+ const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+ const order=orders.find(o=>o.id===id);
+ if(!order||order.status==='Cancelled')return;
+ if(!confirm('Cancel order '+id+'?'))return;
+ const {error}=await supabaseClient.from('orders').update({status:'Cancelled'}).eq('order_id',id);
+ if(error){alert('Could not cancel this order. Please try again.');console.error(error);return}
+ order.status='Cancelled';
+ localStorage.setItem('dkp_orders',JSON.stringify(orders));
+ renderHistory();
 }
 const ADMIN_USER_ID='06cab660-af20-49aa-abc4-4e0f2211826a';
 async function staffLogin(){
