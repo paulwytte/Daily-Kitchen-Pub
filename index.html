@@ -136,17 +136,22 @@ function renderCart(){
 }
 function toggleAddress(){document.getElementById('addressWrap').style.display=document.getElementById('orderType').value==='delivery'?'block':'none'}
 function normalizePhone(p){p=p.replace(/\D/g,'');if(p.startsWith('0'))return '233'+p.slice(1);return p}
-function submitOrder(e){
+async function submitOrder(e){
  e.preventDefault();
  if(!cart.length){alert('Please add at least one item to your cart.');location.hash='#menu';return}
  const type=document.getElementById('orderType').value,address=document.getElementById('deliveryAddress').value.trim();
  if(type==='delivery'&&!address){alert('Please enter your delivery address.');return}
  const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),notes=document.getElementById('orderNotes').value.trim();
  const order={id,name,phone,type,address,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
+ const {error}=await supabaseClient.from('orders').insert({
+  order_id:id,customer_name:name,phone,order_type:type,address:address||null,notes:notes||null,
+  items:order.items,total:order.total,status:'Confirmed',created_at:order.created
+ });
+ if(error){alert('Could not save your order. Please try again.');console.error(error);return}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
  const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('%0A');
  const msg='Daily Kitchen & Pub Order%0AOrder ID: '+encodeURIComponent(id)+'%0AName: '+encodeURIComponent(name)+'%0APhone: '+encodeURIComponent(phone)+'%0AType: '+encodeURIComponent(type)+(address?'%0AAddress: '+encodeURIComponent(address):'')+'%0A%0AItems:%0A'+lines+'%0A%0ATotal: '+encodeURIComponent(money(order.total))+(notes?'%0ANotes: '+encodeURIComponent(notes):'');
- cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
+ cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();await renderAdmin();
  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
  location.hash='#orders';
 }
@@ -196,13 +201,15 @@ async function adminLogout(){
  document.getElementById('staffPassword').value='';
  document.getElementById('staffAuthMessage').textContent='You have been logged out.';
 }
-function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
-function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
-function renderAdmin(){
+async function setStatus(id,status){
+ const {error}=await supabaseClient.from('orders').updateasync function renderAdmin(){
  const box=document.getElementById('adminOrders');if(!box||document.getElementById('adminPanel').style.display==='none')return;
- const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
- if(!orders.length){box.innerHTML='<p>No orders received on this browser yet.</p>';return}
- box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+ box.innerHTML='<p>Loading orders...</p>';
+ const {data:orders,error}=await supabaseClient.from('orders').select('*').order('created_at',{ascending:false});
+ if(error){box.innerHTML='<p>Could not load orders. Please refresh or log in again.</p>';console.error(error);return}
+ if(!orders.length){box.innerHTML='<p>No orders received yet.</p>';return}
+ box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.order_id+'</strong> <span class="status">'+o.status+'</span><p>🕒 '+new Date(o.created_at).toLocaleString()+'<br>👤 '+o.customer_name+' — '+o.phone+'<br>📍 '+(o.order_type==='delivery'?(o.address||''):'Pickup')+'<br>'+((o.items||[]).map(x=>x.qty+' × '+x.name).join(', '))+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.order_id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.order_id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.order_id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.order_id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.order_id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+String(o.customer_name||'').replace(/'/g,"\\'")+'\',\''+o.order_id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+}row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
 }
 document.querySelectorAll('.item').forEach(el=>{
  const priceEl=el.querySelector('.price'); if(!priceEl)return;
