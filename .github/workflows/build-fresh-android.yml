@@ -1,0 +1,80 @@
+name: Build Daily Kitchen & Pub Fresh Android App
+
+on:
+  push:
+    branches:
+      - android-fresh-build
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
+
+      - name: Download Gradle 8.9
+        run: |
+          curl -L --fail https://services.gradle.org/distributions/gradle-8.9-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+
+      - name: Prepare Daily Kitchen & Pub logo
+        run: |
+          python3 -m pip install --quiet Pillow
+          mkdir -p android-fresh/app/src/main/res/drawable
+          curl -L --fail https://raw.githubusercontent.com/paulwytte/Daily-Kitchen-Pub/main/logo.png -o /tmp/daily-kitchen-logo.png
+          python3 - <<'PY'
+          from PIL import Image
+          Image.open('/tmp/daily-kitchen-logo.png').convert('RGB').save(
+              'android-fresh/app/src/main/res/drawable/daily_kitchen_logo.jpg',
+              quality=92,
+              optimize=True
+          )
+          PY
+
+      - name: Apply clear prices and Java string fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android-fresh/app/src/main/java/com/dailykitchenpub/app/MainActivity.java')
+          s = p.read_text()
+          old = 'Button add=btn("Add"); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(88,60));'
+          new = 'Button add=btn("ADD\\n"+item.priceLabel); add.setTextSize(12); add.setOnClickListener(v->{add(item);}); card.addView(add,new LinearLayout.LayoutParams(105,60));'
+          if old in s:
+              s = s.replace(old, new)
+          s = s.replace('Good Food • Cold Drinks • Great Vibes\nEat • Drink • Relax', 'Good Food • Cold Drinks • Great Vibes\\nEat • Drink • Relax')
+          s = s.replace('📞 0241936496  •  0271938376\n🔥 Hotline: 0598192068\n📍 Tema Community 18 & PramPram', '📞 0241936496  •  0271938376\\n🔥 Hotline: 0598192068\\n📍 Tema Community 18 & PramPram')
+          p.write_text(s)
+          PY
+
+      - name: Build APK and AAB
+        working-directory: android-fresh
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: /tmp/gradle-8.9/bin/gradle --no-daemon assembleDebug bundleRelease --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DailyKitchenPub-debug-apk
+          path: android-fresh/app/build/outputs/apk/debug/*.apk
+
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: DailyKitchenPub-release-aab
+          path: android-fresh/app/build/outputs/bundle/release/*.aab
