@@ -81,13 +81,21 @@
 </section>
 
 <section id="staff">
- <div class="heading"><h2>🔐 Staff / Admin</h2><p>Restaurant order management.</p></div>
+ <div class="heading"><h2>🔐 Staff / Admin</h2><p>Secure restaurant order management.</p></div>
  <div class="admin-box" id="adminLogin">
-  <label>Staff PIN <input id="staffPin" type="password" inputmode="numeric" maxlength="8" placeholder="Enter staff PIN"></label>
-  <button class="order-btn" style="margin-top:12px" onclick="staffLogin()">Login</button>
+  <label>Staff email<input id="staffEmail" type="email" autocomplete="username" placeholder="Staff email"></label>
+  <label style="display:block;margin-top:12px">Password<input id="staffPassword" type="password" autocomplete="current-password" placeholder="Staff password"></label>
+  <div style="margin-top:12px">
+   <button class="order-btn" onclick="staffLogin()">Login</button>
+   <button class="order-btn dark" onclick="resetAdminPassword()">Forgot password</button>
+  </div>
+  <p id="staffAuthMessage" class="small" style="margin-top:12px"></p>
  </div>
  <div class="admin-box" id="adminPanel" style="display:none">
-  <h3>👨🏾‍🍳 Order Dashboard</h3><div id="adminOrders"></div>
+  <h3>👨🏾‍🍳 Order Dashboard</h3>
+  <p id="staffSignedInAs" class="small"></p>
+  <button class="order-btn dark" onclick="adminLogout()">Log out</button>
+  <div id="adminOrders" style="margin-top:14px"></div>
  </div>
 </section>
 <section class="event" id="catering"><div class="inner"><div class="heading"><h2>🎉 Catering & Events</h2><p style="color:#ddd">Book us for your special occasion.</p></div><div class="cards"><div class="card"><h3>Birthdays</h3><p>Food service for celebrations and gatherings.</p></div><div class="card"><h3>Weddings</h3><p>Discuss your food and catering needs with us.</p></div><div class="card"><h3>Corporate Events</h3><p>Food service for meetings, functions and corporate gatherings.</p></div><div class="card"><h3>Outdoor Catering</h3><p>Parties, outdoor events and other special occasions.</p></div></div></div></section>
@@ -147,9 +155,46 @@ function renderHistory(){
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
  box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
 }
-function staffLogin(){
- if(document.getElementById('staffPin').value==='2026'){document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';renderAdmin()}
- else alert('Incorrect staff PIN.')
+const ADMIN_USER_ID='06cab660-af20-49aa-abc4-4e0f2211826a';
+async function staffLogin(){
+ const email=document.getElementById('staffEmail').value.trim();
+ const password=document.getElementById('staffPassword').value;
+ const msg=document.getElementById('staffAuthMessage');
+ if(!email||!password){msg.textContent='Enter your staff email and password.';return}
+ msg.textContent='Signing in...';
+ const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+ if(error){msg.textContent='Login failed. Check your email and password.';return}
+ if(!data.user||data.user.id!==ADMIN_USER_ID){
+   await supabaseClient.auth.signOut();
+   msg.textContent='This account is not authorized for Staff/Admin access.';
+   return;
+ }
+ showAdminForUser(data.user);
+}
+async function resetAdminPassword(){
+ const email=document.getElementById('staffEmail').value.trim();
+ const msg=document.getElementById('staffAuthMessage');
+ if(!email){msg.textContent='Enter your staff email first.';return}
+ const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname+'#staff'});
+ msg.textContent=error?'Could not send the reset email.':'Password reset email sent. Check your email.';
+}
+function showAdminForUser(user){
+ if(!user||user.id!==ADMIN_USER_ID)return;
+ document.getElementById('adminLogin').style.display='none';
+ document.getElementById('adminPanel').style.display='block';
+ document.getElementById('staffSignedInAs').textContent='Signed in securely as Staff/Admin.';
+ renderAdmin();
+}
+async function checkStaffSession(){
+ const {data}=await supabaseClient.auth.getUser();
+ if(data.user&&data.user.id===ADMIN_USER_ID) showAdminForUser(data.user);
+}
+async function adminLogout(){
+ await supabaseClient.auth.signOut();
+ document.getElementById('adminLogin').style.display='block';
+ document.getElementById('adminPanel').style.display='none';
+ document.getElementById('staffPassword').value='';
+ document.getElementById('staffAuthMessage').textContent='You have been logged out.';
 }
 function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
 function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
@@ -165,5 +210,13 @@ document.querySelectorAll('.item').forEach(el=>{
  const b=document.createElement('button');b.className='add-btn';b.textContent='ADD '+label;b.onclick=()=>addItem(name,price,label);el.appendChild(b)
 });
 renderCart();renderHistory();toggleAddress();
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+ if(session&&session.user&&session.user.id===ADMIN_USER_ID) showAdminForUser(session.user);
+ if(event==='SIGNED_OUT'){
+  document.getElementById('adminLogin').style.display='block';
+  document.getElementById('adminPanel').style.display='none';
+ }
+});
+checkStaffSession();
 </script>
 </body></html>
