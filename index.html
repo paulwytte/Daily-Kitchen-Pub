@@ -83,8 +83,10 @@
 <section id="staff">
  <div class="heading"><h2>🔐 Staff / Admin</h2><p>Restaurant order management.</p></div>
  <div class="admin-box" id="adminLogin">
-  <label>Staff PIN <input id="staffPin" type="password" inputmode="numeric" maxlength="8" placeholder="Enter staff PIN"></label>
+  <label>Email <input id="staffEmail" type="email" value="linkwytte@gmail.com" autocomplete="username" placeholder="Staff email"></label>
+  <label style="display:block;margin-top:12px">Password <input id="staffPassword" type="password" autocomplete="current-password" placeholder="Enter password"></label>
   <button class="order-btn" style="margin-top:12px" onclick="staffLogin()">Login</button>
+  <p id="staffLoginMsg" class="small" style="margin-top:10px"></p>
  </div>
  <div class="admin-box" id="adminPanel" style="display:none">
   <h3>👨🏾‍🍳 Order Dashboard</h3><div id="adminOrders"></div>
@@ -100,7 +102,13 @@
  <a class="order-btn dark" href="#staff">🔐 Staff</a>
  <a class="order-btn green" href="tel:+233241936496">☎ Call Restaurant</a>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL="https://wugmwunobthtidjrafek.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const STAFF_UID="06cab660-af20-49aa-abc4-4e0f2211826a";
+const STAFF_EMAIL="linkwytte@gmail.com";
 const WA='233241936496';
 let cart=JSON.parse(localStorage.getItem('dkp_cart')||'[]');
 
@@ -139,9 +147,13 @@ function renderHistory(){
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
  box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
 }
-function staffLogin(){
- if(document.getElementById('staffPin').value==='2026'){document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';renderAdmin()}
- else alert('Incorrect staff PIN.')
+async function staffLogin(){
+ const email=document.getElementById('staffEmail').value.trim(),password=document.getElementById('staffPassword').value;
+ const msg=document.getElementById('staffLoginMsg'); msg.textContent='Signing in...';
+ const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+ if(error){msg.textContent='Login failed: '+error.message;return}
+ if(!data.user || data.user.id!==STAFF_UID){await supabaseClient.auth.signOut();msg.textContent='This account is not authorized for Staff/Admin access.';return}
+ document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';msg.textContent='';renderAdmin()
 }
 function setStatus(id,status){const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');const o=orders.find(x=>x.id===id);if(o){o.status=status;localStorage.setItem('dkp_orders',JSON.stringify(orders));renderHistory();renderAdmin()}}
 function contactCustomer(phone,name,id){window.open('https://wa.me/'+normalizePhone(phone)+'?text='+encodeURIComponent('Hello '+name+', this is Daily Kitchen & Pub regarding order '+id+'.'),'_blank')}
