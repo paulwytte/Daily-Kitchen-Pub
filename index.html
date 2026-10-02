@@ -517,11 +517,12 @@ async function staffLogin(){
  if(btn){btn.disabled=true;btn.textContent='Signing in...'}
  msg.textContent='Checking login...';
  try{
-   await supabaseClient.auth.signOut();
    const result=await supabaseClient.auth.signInWithPassword({email:email,password:password});
    if(result.error)throw result.error;
-   const user=result.data&&result.data.user;
-   if(!user)throw new Error('No user was returned by Supabase.');
+   const {data:userData,error:userError}=await supabaseClient.auth.getUser();
+   if(userError)throw userError;
+   const user=userData&&userData.user;
+   if(!user)throw new Error('Supabase signed in but no user session was returned.');
    if(user.id!==STAFF_UID){
      await supabaseClient.auth.signOut();
      throw new Error('This account is not authorized for Staff/Admin access.');
@@ -535,7 +536,7 @@ async function staffLogin(){
    console.error('Staff login error:',err);
    const m=String(err&&err.message||err);
    msg.textContent=/invalid login credentials/i.test(m)
-     ? 'Login failed: incorrect staff email or password. Use Forgot password if needed.'
+     ? 'Login failed: Supabase rejected the email/password. Tap Forgot password to set a new password.'
      : 'Login failed: '+m;
  }finally{
    if(btn){btn.disabled=false;btn.textContent='Login'}
@@ -552,8 +553,9 @@ async function staffSignOut(){
  location.hash='#staff';
 }
 async function forgotPassword(){
- const email=document.getElementById('staffEmail').value.trim(),msg=document.getElementById('staffLoginMsg');
- if(!email){msg.textContent='Enter your staff email first.';return}
+ const email=document.getElementById('staffEmail').value.trim().toLowerCase(),msg=document.getElementById('staffLoginMsg');
+ if(!email){msg.textContent='Enter the staff email first.';return}
+ if(email!==STAFF_EMAIL.toLowerCase()){msg.textContent='Use the authorized staff email: '+STAFF_EMAIL;return}
  msg.textContent='Sending password reset email...';
  const redirectTo=window.location.origin+window.location.pathname;
  if(!supabaseClient){msg.textContent='Online login is unavailable. Please refresh and try again.';return}
