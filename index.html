@@ -874,4 +874,225 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
     }
   };
 })();
-</script></body></html>
+</script><!-- FINAL CHECKOUT AND HISTORY FIX -->
+<script>
+(function(){
+  function moneySafe(n){
+    return 'GHS '+(Number(n)||0).toFixed(2);
+  }
+  function escSafe(v){
+    return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function getCartSafe(){
+    try{
+      var c=JSON.parse(localStorage.getItem('dkp_cart')||'[]');
+      return Array.isArray(c)?c:[];
+    }catch(e){return []}
+  }
+  function syncCheckoutTotal(){
+    var c=getCartSafe(), total=0, count=0;
+    c.forEach(function(x){
+      total+=(Number(x.price)||0)*(Number(x.qty)||0);
+      count+=Number(x.qty)||0;
+    });
+    var a=document.getElementById('cartTotal');
+    var b=document.getElementById('checkoutTotal');
+    var d=document.getElementById('cartBadge');
+    var m=document.getElementById('momoAmount');
+    if(a)a.textContent=moneySafe(total);
+    if(b)b.textContent=moneySafe(total);
+    if(d)d.textContent=String(count);
+    if(m)m.textContent=moneySafe(total);
+  }
+
+  window.renderHistory=function(){
+    var box=document.getElementById('orderHistory');
+    if(!box)return;
+    var orders=[];
+    try{
+      var raw=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+      orders=Array.isArray(raw)?raw:[];
+    }catch(e){orders=[]}
+    if(!orders.length){
+      box.innerHTML='<p>No orders yet. Your completed orders will appear here.</p>';
+      return;
+    }
+    box.innerHTML=orders.map(function(o){
+      var items=Array.isArray(o.items)?o.items:[];
+      var itemHtml=items.map(function(x){
+        var qty=Number(x.qty||x.quantity||0);
+        var name=x.name||x.item_name||'Item';
+        var label=x.label||moneySafe(x.price||x.unit_price_ghs||0);
+        return '<div>• '+escSafe(qty)+' × '+escSafe(name)+' — '+escSafe(label)+'</div>';
+      }).join('');
+      var created=o.created||o.created_at||Date.now();
+      var when=new Date(created);
+      var dateText=isNaN(when.getTime())?'':when.toLocaleString();
+      var total=Number(o.total!=null?o.total:o.total_ghs)||0;
+      var type=o.type||o.fulfillment_type||'pickup';
+      var address=o.address||o.delivery_address||'';
+      var payment=o.paymentMethod||'Payment method not recorded';
+      var notes=o.notes||'';
+      var status=o.status||'Confirmed';
+      return '<div class="history-card">'+
+        '<strong>'+escSafe(o.id||o.order_code||'Order')+'</strong> '+
+        '<span class="status">'+escSafe(status)+'</span>'+
+        '<p>'+escSafe(dateText)+'<br>'+itemHtml+
+        '<br><strong>'+moneySafe(total)+'</strong><br>'+
+        (type==='delivery'?'📍 '+escSafe(address):'📍 Pickup')+
+        '<br>💳 '+escSafe(payment)+
+        (notes?'<br>📝 '+escSafe(notes):'')+
+        '</p></div>';
+    }).join('');
+  };
+
+  window.renderCart=function(){
+    var box=document.getElementById('cartItems');
+    var c=getCartSafe();
+    syncCheckoutTotal();
+    if(!box)return;
+    if(!c.length){
+      box.innerHTML='<p>Your cart is empty. Add food or drinks above.</p>';
+      return;
+    }
+    box.innerHTML=c.map(function(x,i){
+      var qty=Number(x.qty)||0;
+      var price=Number(x.price)||0;
+      return '<div class="cart-line">'+
+        '<div><strong>'+escSafe(x.name||'Item')+'</strong><br><span class="small">'+escSafe(x.label||moneySafe(price))+'</span></div>'+
+        '<div class="qty-row"><button type="button" onclick="changeQty('+i+',-1)">−</button>'+
+        '<span class="qty">'+qty+'</span>'+
+        '<button type="button" onclick="changeQty('+i+',1)">+</button></div>'+
+        '<strong class="price">'+moneySafe(price*qty)+'</strong></div>';
+    }).join('');
+  };
+
+  window.changeQty=function(index,delta){
+    var c=getCartSafe();
+    if(!c[index])return;
+    c[index].qty=(Number(c[index].qty)||0)+(Number(delta)||0);
+    if(c[index].qty<=0)c.splice(index,1);
+    localStorage.setItem('dkp_cart',JSON.stringify(c));
+    window.renderCart();
+  };
+
+  window.clearCart=function(){
+    localStorage.setItem('dkp_cart','[]');
+    window.renderCart();
+  };
+
+  var originalSubmit=window.submitOrder;
+  window.submitOrder=async function(e){
+    if(e)e.preventDefault();
+    var c=getCartSafe();
+    if(!c.length){
+      alert('Your cart is empty. Please add an item first.');
+      location.hash='#menu';
+      return;
+    }
+    var nameEl=document.getElementById('customerName');
+    var phoneEl=document.getElementById('customerPhone');
+    var typeEl=document.getElementById('orderType');
+    var addressEl=document.getElementById('deliveryAddress');
+    var paymentEl=document.getElementById('paymentMethod');
+    var notesEl=document.getElementById('orderNotes');
+    var txEl=document.getElementById('momoTransactionId');
+    var name=(nameEl&&nameEl.value||'').trim();
+    var phone=(phoneEl&&phoneEl.value||'').trim();
+    var type=(typeEl&&typeEl.value)||'pickup';
+    var address=(addressEl&&addressEl.value||'').trim();
+    var payment=(paymentEl&&paymentEl.value)||'';
+    var notes=(notesEl&&notesEl.value||'').trim();
+    var tx=(txEl&&txEl.value||'').trim();
+
+    if(!name){alert('Please enter your full name.');nameEl&&nameEl.focus();return;}
+    if(!phone){alert('Please enter your phone number.');phoneEl&&phoneEl.focus();return;}
+    if(type==='delivery'&&!address){alert('Please enter your delivery address.');addressEl&&addressEl.focus();return;}
+    if(!payment){alert('Please select a payment method.');paymentEl&&paymentEl.focus();return;}
+    if(payment==='MTN MoMo'&&!tx){alert('Please enter the MTN MoMo Transaction ID.');txEl&&txEl.focus();return;}
+
+    var id='DKP-'+Date.now();
+    var total=c.reduce(function(s,x){return s+(Number(x.price)||0)*(Number(x.qty)||0)},0);
+    var order={
+      id:id,name:name,phone:phone,type:type,address:address,
+      paymentMethod:payment,momoTransactionId:tx,notes:notes,total:total,
+      items:c.map(function(x){return {name:String(x.name||'Item'),price:Number(x.price)||0,label:String(x.label||moneySafe(x.price)),qty:Number(x.qty)||0}}),
+      status:'Confirmed',created:new Date().toISOString()
+    };
+
+    var localOrders=[];
+    try{
+      localOrders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+      if(!Array.isArray(localOrders))localOrders=[];
+    }catch(err){localOrders=[]}
+    localOrders.unshift(order);
+    localStorage.setItem('dkp_orders',JSON.stringify(localOrders));
+    window.renderHistory();
+
+    var itemLines=order.items.map(function(x){return '• '+x.qty+' x '+x.name+' — '+x.label}).join('\n');
+    var msgText=[
+      '🍽️ DAILY KITCHEN & PUB ORDER','Order ID: '+id,'',
+      '👤 Customer: '+name,'☎ Phone: '+phone,
+      '📍 Order Type: '+(type==='delivery'?'Delivery':'Pickup'),
+      ...(address?['📌 Address: '+address]:[]),
+      '💳 Payment: '+payment,
+      ...(tx?['🔢 MoMo Transaction ID: '+tx]:[]),
+      ...(payment==='MTN MoMo'?['📱 MoMo Pay To: 024 193 6496 (Paul Ababio)']:[]),
+      '','🛒 ORDER ITEMS',itemLines,'','💰 TOTAL: '+moneySafe(total),
+      ...(notes?['📝 Notes: '+notes]:[])
+    ].join('\n');
+
+    var saveOnline=true;
+    try{
+      if(!window.supabaseClient)throw new Error('Supabase connection is unavailable.');
+      var items=order.items.map(function(x){return {item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}});
+      var response=await fetch('https://wugmwunobthtidjrafek.supabase.co/rest/v1/rpc/create_order',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':'sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF','Authorization':'Bearer sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF'},
+        body:JSON.stringify({
+          p_order_code:id,p_customer_name:name,p_customer_phone:phone,
+          p_fulfillment_type:type,p_delivery_address:address||'',
+          p_order_notes:'Payment Method: '+payment+(tx?'\nMoMo Transaction ID: '+tx:'')+(notes?'\nCustomer Notes: '+notes:''),
+          p_total_ghs:total,p_items:items
+        })
+      });
+      if(!response.ok)throw new Error('Online order save failed.');
+    }catch(err){
+      console.warn('Online order save failed; local history kept:',err);
+      saveOnline=false;
+    }
+
+    if(!saveOnline){
+      alert('Your order is saved in Order History on this device. The online restaurant system could not be reached, so we will still continue to WhatsApp.');
+    }
+
+    localStorage.setItem('dkp_cart','[]');
+    window.renderCart();
+    window.renderHistory();
+
+    var waUrl='https://api.whatsapp.com/send?phone=233241936496&text='+encodeURIComponent(msgText);
+    window.location.assign(waUrl);
+  };
+
+  function initFix(){
+    window.renderCart();
+    window.renderHistory();
+    if(typeof window.toggleAddress==='function')window.toggleAddress();
+    if(typeof window.togglePaymentFields==='function')window.togglePaymentFields();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFix);else initFix();
+  window.addEventListener('hashchange',function(){
+    if(location.hash==='#checkout'){
+      syncCheckoutTotal();
+      var form=document.getElementById('orderForm');
+      if(form)form.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    if(location.hash==='#orders'){
+      window.renderHistory();
+      var history=document.getElementById('orders');
+      if(history)history.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
+})();
+</script>
+</body></html>
