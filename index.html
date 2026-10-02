@@ -467,4 +467,49 @@ renderCart();renderHistory();toggleAddress();
   });
   if(document.readyState!=='loading')refresh();
 })();
+</script>\n<script>
+(function(){
+  function cart(){try{return JSON.parse(localStorage.getItem('dkp_cart')||'[]')}catch(e){return[]}}
+  function save(c){localStorage.setItem('dkp_cart',JSON.stringify(c))}
+  function draw(){
+    var c=cart(), total=0, count=0, box=document.getElementById('cartItems');
+    c.forEach(function(i){total+=(parseFloat(i.price)||0)*(parseInt(i.qty)||0);count+=parseInt(i.qty)||0});
+    var b=document.getElementById('cartBadge'),t=document.getElementById('cartTotal'),ct=document.getElementById('checkoutTotal');
+    if(b)b.textContent=String(count);
+    if(t)t.textContent='GHS '+total.toFixed(2);
+    if(ct)ct.textContent='GHS '+total.toFixed(2);
+    if(!box)return;
+    if(!c.length){box.innerHTML='<p>Your cart is empty. Add food or drinks above.</p>';return}
+    box.innerHTML=c.map(function(i,n){
+      return '<div class="cart-line"><div><strong>'+String(i.name)+'</strong><br><span class="small">'+String(i.label||'')+'</span></div><div class="qty-row"><button type="button" data-cart-index="'+n+'" data-cart-delta="-1">−</button><span class="qty">'+i.qty+'</span><button type="button" data-cart-index="'+n+'" data-cart-delta="1">+</button></div><strong class="price">GHS '+((parseFloat(i.price)||0)*(parseInt(i.qty)||0)).toFixed(2)+'</strong></div>';
+    }).join('');
+  }
+  function add(b){
+    var name=b.getAttribute('data-name'),price=parseFloat(b.getAttribute('data-price')),label=b.getAttribute('data-label');
+    if(!name){
+      var item=b.closest('.item'); name=item&&item.querySelector('span')?item.querySelector('span').textContent.trim():'Item';
+      var pe=item&&item.querySelector('.price'); label=pe?pe.textContent.trim():'';
+      price=parseFloat((label||'').replace(/[^0-9.]/g,''))||0;
+    }
+    var c=cart(),x=null;
+    for(var i=0;i<c.length;i++){if(c[i].name===name&&c[i].label===label){x=c[i];break}}
+    if(x)x.qty=(parseInt(x.qty)||0)+1;else c.push({name:name,price:price||0,label:label||'',qty:1});
+    save(c);draw();
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('.add-btn'):null;
+    if(b){e.preventDefault();e.stopImmediatePropagation();add(b);draw();return}
+    var q=e.target.closest?e.target.closest('[data-cart-index]'):null;
+    if(q){
+      e.preventDefault();
+      var c=cart(),i=parseInt(q.getAttribute('data-cart-index')),d=parseInt(q.getAttribute('data-cart-delta'));
+      if(c[i]){c[i].qty=(parseInt(c[i].qty)||0)+d;if(c[i].qty<=0)c.splice(i,1);save(c);draw()}
+    }
+  },true);
+  window.DKP_addItem=function(name,price,label){
+    var fake=document.createElement('button');fake.setAttribute('data-name',name);fake.setAttribute('data-price',price);fake.setAttribute('data-label',label||'');add(fake);
+  };
+  window.clearCart=function(){save([]);draw()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',draw);else draw();
+})();
 </script>\n</body></html>
