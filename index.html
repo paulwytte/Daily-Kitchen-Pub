@@ -1095,4 +1095,53 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
   });
 })();
 </script>
+
+<script>
+/* CONFIRM ORDER CUSTOMER NOTIFICATION */
+(function(){
+  var WA_PREFIX='233';
+  function normalize(phone){
+    var p=String(phone||'').replace(/[^0-9]/g,'');
+    if(p.indexOf('00')===0)p=p.slice(2);
+    if(p.indexOf('233')===0)return p;
+    if(p.charAt(0)==='0')return WA_PREFIX+p.slice(1);
+    return p;
+  }
+  window.setStatus=async function(id,status){
+    var local=[];
+    try{local=JSON.parse(localStorage.getItem('dkp_orders')||'[]');if(!Array.isArray(local))local=[]}catch(e){local=[]}
+    var localOrder=local.find(function(x){return x.id===id});
+    if(localOrder){localOrder.status=status;localStorage.setItem('dkp_orders',JSON.stringify(local));}
+
+    var error=null;
+    if(window.supabaseClient){
+      try{
+        var result=await window.supabaseClient.from('orders').update({status:status}).eq('order_code',id);
+        error=result.error;
+      }catch(e){error=e;}
+    }else{error=new Error('Supabase unavailable');}
+    if(error)console.warn('Online status update failed:',error);
+
+    /* When staff presses Confirmed, open WhatsApp with the ready-time message. */
+    if(status==='Confirmed'){
+      var order=localOrder;
+      if(!order){
+        try{
+          var remote=await window.supabaseClient.from('orders').select('order_code,customer_name,customer_phone').eq('order_code',id).maybeSingle();
+          if(remote&&remote.data)order={id:remote.data.order_code,name:remote.data.customer_name,phone:remote.data.customer_phone};
+        }catch(e){}
+      }
+      if(order&&order.phone){
+        var customerName=String(order.name||'Customer');
+        var message='Hello '+customerName+', thank you for ordering from Daily Kitchen & Pub. Your order '+id+' has been received and confirmed. 🍽️ Your food will be ready in about 10–15 minutes. We will let you know when it is ready. Thank you for choosing Daily Kitchen & Pub! ❤️';
+        var wa='https://wa.me/'+normalize(order.phone)+'?text='+encodeURIComponent(message);
+        window.open(wa,'_blank','noopener');
+      }
+    }
+
+    if(typeof renderHistory==='function')renderHistory();
+    if(typeof renderAdmin==='function')await renderAdmin();
+  };
+})();
+</script>
 </body></html>
