@@ -145,13 +145,23 @@ async function submitOrder(e){
  const order={id,name,phone,type,address,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
  let remoteSaved=false;
  try{
-   const {data,error}=await supabaseClient.from('orders').insert({
-     order_code:id,customer_name:name,customer_phone:phone,fulfillment_type:type,delivery_address:address||null,order_notes:notes||null,total_ghs:order.total,status:'Confirmed'
-   }).select('id').single();
+   const items=order.items.map(x=>({
+     item_name:x.name,
+     unit_price_ghs:x.price,
+     quantity:x.qty,
+     line_total_ghs:x.price*x.qty
+   }));
+   const {error}=await supabaseClient.rpc('create_order',{
+     p_order_code:id,
+     p_customer_name:name,
+     p_customer_phone:phone,
+     p_fulfillment_type:type,
+     p_delivery_address:address||'',
+     p_order_notes:notes||'',
+     p_total_ghs:order.total,
+     p_items:items
+   });
    if(error)throw error;
-   const rows=order.items.map(x=>({order_id:data.id,item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
-   const {error:itemError}=await supabaseClient.from('order_items').insert(rows);
-   if(itemError)throw itemError;
    remoteSaved=true;
  }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
