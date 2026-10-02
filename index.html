@@ -224,6 +224,18 @@ footer{border-top:1px solid rgba(255,255,255,.06)}
  <a class="order-btn dark" href="#staff">🔐 Staff</a>
  <a class="order-btn green" href="tel:+233241936496">☎ Call Restaurant</a>
 </div>
+<script>
+window.DKP_CART_KEY='dkp_cart';
+window.DKP_addItem=function(name,price,label){
+  let c=[];
+  try{c=JSON.parse(localStorage.getItem(window.DKP_CART_KEY)||'[]')}catch(e){c=[]}
+  const x=c.find(i=>i.name===name&&i.label===label);
+  if(x)x.qty=Number(x.qty||0)+1;else c.push({name,price:Number(price)||0,label,qty:1});
+  localStorage.setItem(window.DKP_CART_KEY,JSON.stringify(c));
+  location.hash='#cart';
+  location.reload();
+};
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://wugmwunobthtidjrafek.supabase.co";
