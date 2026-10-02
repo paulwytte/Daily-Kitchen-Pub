@@ -258,35 +258,25 @@ async function submitOrder(e){
  const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),paymentMethod=document.getElementById('paymentMethod').value,notes=document.getElementById('orderNotes').value.trim();
  if(!paymentMethod){alert('Please select a payment method.');return}
  const order={id,name,phone,type,address,paymentMethod,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
+ const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('\\n');
+ const msgText='Daily Kitchen & Pub Order\\nOrder ID: '+id+'\\nName: '+name+'\\nPhone: '+phone+'\\nType: '+type+(address?'\\nAddress: '+address:'')+'\\nPayment Method: '+paymentMethod+'\\n\\nItems:\\n'+lines+'\\n\\nTotal: '+money(order.total)+(notes?'\\nNotes: '+notes:'');
+ const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
  let remoteSaved=false;
  try{
-   const items=order.items.map(x=>({
-     item_name:x.name,
-     unit_price_ghs:x.price,
-     quantity:x.qty,
-     line_total_ghs:x.price*x.qty
-   }));
-   const {error}=await supabaseClient.rpc('create_order',{
-     p_order_code:id,
-     p_customer_name:name,
-     p_customer_phone:phone,
-     p_fulfillment_type:type,
-     p_delivery_address:address||'',
-     p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
-     p_total_ghs:order.total,
-     p_items:items
+   const items=order.items.map(x=>({item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
+   const rpc=supabaseClient.rpc('create_order',{
+     p_order_code:id,p_customer_name:name,p_customer_phone:phone,p_fulfillment_type:type,
+     p_delivery_address:address||'',p_order_notes:'Payment Method: '+paymentMethod+(notes?'\\nCustomer Notes: '+notes:''),
+     p_total_ghs:order.total,p_items:items
    });
-   if(error)throw error;
+   const result=await Promise.race([rpc,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Order sync timeout')),8000))]);
+   if(result.error)throw result.error;
    remoteSaved=true;
  }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
- const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('\n');
- const msgText='Daily Kitchen & Pub Order\nOrder ID: '+id+'\nName: '+name+'\nPhone: '+phone+'\nType: '+type+(address?'\nAddress: '+address:'')+'\nPayment Method: '+paymentMethod+'\n\nItems:\n'+lines+'\n\nTotal: '+money(order.total)+(notes?'\nNotes: '+notes:'');
- const msg=encodeURIComponent(msgText);
  cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
- if(!remoteSaved) alert('Order saved on this device. Online sync is temporarily unavailable.');
- window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
- location.hash='#orders';
+ if(!remoteSaved) console.warn('Order saved on this device. Online sync was unavailable.');
+ location.href=waUrl;
 }
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
