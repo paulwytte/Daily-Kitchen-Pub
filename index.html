@@ -408,16 +408,13 @@ async function submitOrder(e){
  if(!paymentMethod){alert('Please select a payment method.');return}
 
  const order={
-   id,name,phone,type,address,paymentMethod,notes,
-   total:cartTotal(),
-   items:cart.map(x=>({...x})),
-   status:'Confirmed',
-   created:new Date().toISOString()
+   id:id,name:name,phone:phone,type:type,address:address,
+   paymentMethod:paymentMethod,notes:notes,total:cartTotal(),
+   items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()
  };
 
- // Build a WhatsApp message with real line breaks so the restaurant phone
- // receives the complete order, customer details, items, quantities and total.
- const lines=order.items.map(x=>'• '+x.qty+' x '+x.name+' — '+x.label).join('\\n');
+ // Use real line breaks. WhatsApp will receive the complete order, not just the title.
+ const itemLines=order.items.map(x=>'• '+x.qty+' x '+x.name+' — '+x.label).join('\n');
  const msgText=[
    '🍽️ DAILY KITCHEN & PUB ORDER',
    'Order ID: '+id,
@@ -429,62 +426,54 @@ async function submitOrder(e){
    '💳 Payment: '+paymentMethod,
    '',
    '🛒 ORDER ITEMS',
-   lines,
+   itemLines,
    '',
    '💰 TOTAL: '+money(order.total),
    ...(notes?['📝 Notes: '+notes]:[])
- ].join('\\n');
- const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
+ ].join('\n');
 
- // Save the order locally first.
- const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
- orders.unshift(order);
- localStorage.setItem('dkp_orders',JSON.stringify(orders));
-
- // Sync to Supabase in the background; WhatsApp does not wait for this.
+ // Save locally before leaving this page.
  try{
-   const items=order.items.map(x=>({
-     item_name:x.name,
-     unit_price_ghs:x.price,
-     quantity:x.qty,
-     line_total_ghs:x.price*x.qty
-   }));
+   const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+   orders.unshift(order);
+   localStorage.setItem('dkp_orders',JSON.stringify(orders));
+ }catch(err){console.warn('Local order history save failed:',err)}
+
+ // Start the online save without blocking WhatsApp.
+ try{
+   const items=order.items.map(x=>({item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
    if(supabaseClient){
      fetch(SUPABASE_URL+'/rest/v1/rpc/create_order',{
-       method:'POST',
-       keepalive:true,
+       method:'POST',keepalive:true,
        headers:{
          'Content-Type':'application/json',
          'apikey':SUPABASE_PUBLISHABLE_KEY,
          'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
        },
        body:JSON.stringify({
-         p_order_code:id,
-         p_customer_name:name,
-         p_customer_phone:phone,
-         p_fulfillment_type:type,
-         p_delivery_address:address||'',
-         p_order_notes:'Payment Method: '+paymentMethod+(notes?'\\nCustomer Notes: '+notes:''),
-         p_total_ghs:order.total,
-         p_items:items
+         p_order_code:id,p_customer_name:name,p_customer_phone:phone,
+         p_fulfillment_type:type,p_delivery_address:address||'',
+         p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
+         p_total_ghs:order.total,p_items:items
        })
      }).catch(err=>console.warn('Background order sync failed:',err));
    }
  }catch(err){console.warn('Background order sync could not start:',err)}
 
- cart=[];
- saveCart();
- document.getElementById('orderForm').reset();
- toggleAddress();
- renderHistory();
-
- // Direct navigation opens WhatsApp with the full pre-filled order message.
- window.location.href=waUrl;
-}
-function renderHistory(){
- const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+ // Do NOT clear the cart/history until after the WhatsApp link has been opened.
+ const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
+ window.location.assign(waUrl);
+}function renderHistory(){
+ const box=document.getElementById('orderHistory');
+ let orders=[];
+ try{orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');if(!Array.isArray(orders))orders=[]}catch(e){orders=[]}
+ if(!box)return;
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
- box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+'</p></div>').join('')
+ box.innerHTML=orders.map(o=>{
+   const items=Array.isArray(o.items)?o.items:[];
+   const itemHtml=items.map(x=>'<div>• '+String(x.qty||0)+' × '+String(x.name||'Item')+' — '+String(x.label||money(x.price||0))+'</div>').join('');
+   return '<div class="history-card"><strong>'+String(o.id||'Order')+'</strong> <span class="status">'+String(o.status||'Confirmed')+'</span><p>'+new Date(o.created||Date.now()).toLocaleString()+'<br>'+itemHtml+'<br><strong>'+money(o.total||0)+'</strong><br>'+ (o.type==='delivery'?'📍 '+String(o.address||''):'📍 Pickup')+'<br>💳 '+String(o.paymentMethod||'Payment method not recorded')+(o.notes?'<br>📝 '+String(o.notes):'')+'</p></div>';
+ }).join('');
 }
 async function staffLogin(){
  const email=document.getElementById('staffEmail').value.trim().toLowerCase();
@@ -494,22 +483,18 @@ async function staffLogin(){
  if(!email){msg.textContent='Enter the staff email.';return}
  if(email!==STAFF_EMAIL.toLowerCase()){msg.textContent='Use the authorized staff email: '+STAFF_EMAIL;return}
  if(!password){msg.textContent='Enter the staff password.';return}
- if(!supabaseClient){msg.textContent='Supabase is not connected. Please refresh the page and try again.';return}
+ if(!supabaseClient){msg.textContent='Supabase connection is unavailable. Refresh the page and try again.';return}
  if(btn){btn.disabled=true;btn.textContent='Signing in...'}
- msg.textContent='Signing in...';
+ msg.textContent='Checking login...';
  try{
-   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-   if(error){
-     const m=String(error.message||'');
-     msg.textContent=/invalid login credentials/i.test(m)
-       ? 'Login failed. The staff email or password is incorrect. Use “Forgot password?” to reset the password.'
-       : 'Login failed: '+m;
-     return;
-   }
-   if(!data.user || data.user.id!==STAFF_UID){
+   await supabaseClient.auth.signOut();
+   const result=await supabaseClient.auth.signInWithPassword({email:email,password:password});
+   if(result.error)throw result.error;
+   const user=result.data&&result.data.user;
+   if(!user)throw new Error('No user was returned by Supabase.');
+   if(user.id!==STAFF_UID){
      await supabaseClient.auth.signOut();
-     msg.textContent='This account is not authorized for Staff/Admin access.';
-     return;
+     throw new Error('This account is not authorized for Staff/Admin access.');
    }
    document.getElementById('adminLogin').style.display='none';
    document.getElementById('resetPasswordBox').style.display='none';
@@ -517,8 +502,11 @@ async function staffLogin(){
    msg.textContent='';
    await renderAdmin();
  }catch(err){
-   msg.textContent='Login error. Please refresh the page and try again.';
-   console.error(err);
+   console.error('Staff login error:',err);
+   const m=String(err&&err.message||err);
+   msg.textContent=/invalid login credentials/i.test(m)
+     ? 'Login failed: incorrect staff email or password. Use Forgot password if needed.'
+     : 'Login failed: '+m;
  }finally{
    if(btn){btn.disabled=false;btn.textContent='Login'}
  }
@@ -563,6 +551,19 @@ if(supabaseClient) supabaseClient.auth.onAuthStateChange((event)=>{
    document.getElementById('resetPasswordMsg').textContent='Enter and confirm your new password.';
  }
 });
+async function restoreStaffSession(){
+ if(!supabaseClient)return;
+ try{
+   const {data}=await supabaseClient.auth.getSession();
+   const user=data&&data.session&&data.session.user;
+   if(user&&user.id===STAFF_UID){
+     document.getElementById('adminLogin').style.display='none';
+     document.getElementById('resetPasswordBox').style.display='none';
+     document.getElementById('adminPanel').style.display='block';
+     await renderAdmin();
+   }
+ }catch(err){console.warn('Could not restore staff session:',err)}
+}
 async function loadRemoteOrders(){
  if(!supabaseClient) throw new Error('Supabase unavailable');
  const {data,error}=await supabaseClient.from('orders').select('id,order_code,customer_name,customer_phone,fulfillment_type,delivery_address,order_notes,total_ghs,status,created_at,order_items(item_name,unit_price_ghs,quantity,line_total_ghs)').order('created_at',{ascending:false});
@@ -591,7 +592,7 @@ async function renderAdmin(){
    box.innerHTML='<p class="small">Online orders are temporarily unavailable. Showing orders saved on this device.</p>'+orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+(o.notes?'<br>📝 '+o.notes:'')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p></div>').join('');
  }
 }
-renderCart();renderHistory();toggleAddress();
+renderCart();renderHistory();toggleAddress();restoreStaffSession();
 
 </script>
 <script>
