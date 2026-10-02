@@ -428,21 +428,41 @@ function renderHistory(){
  box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+'</p></div>').join('')
 }
 async function staffLogin(){
- const email=document.getElementById('staffEmail').value.trim(),password=document.getElementById('staffPassword').value;
- const msg=document.getElementById('staffLoginMsg'); msg.textContent='Signing in...';
- if(!supabaseClient){msg.textContent='Online login is unavailable. Please refresh and try again.';return}
- const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
- if(error){msg.textContent='Login failed: '+error.message;return}
- if(!data.user || data.user.id!=='06cab660-af20-49aa-abc4-4e0f2211826a'){
-   if(supabaseClient) await supabaseClient.auth.signOut();
-   msg.textContent='This account is not authorized for Staff/Admin access.';
-   return
+ const email=document.getElementById('staffEmail').value.trim().toLowerCase();
+ const password=document.getElementById('staffPassword').value;
+ const msg=document.getElementById('staffLoginMsg');
+ const btn=document.querySelector('#adminLogin button[onclick="staffLogin()"]');
+ if(!email){msg.textContent='Enter the staff email.';return}
+ if(email!==STAFF_EMAIL.toLowerCase()){msg.textContent='Use the authorized staff email: '+STAFF_EMAIL;return}
+ if(!password){msg.textContent='Enter the staff password.';return}
+ if(!supabaseClient){msg.textContent='Supabase is not connected. Please refresh the page and try again.';return}
+ if(btn){btn.disabled=true;btn.textContent='Signing in...'}
+ msg.textContent='Signing in...';
+ try{
+   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+   if(error){
+     const m=String(error.message||'');
+     msg.textContent=/invalid login credentials/i.test(m)
+       ? 'Login failed. The staff email or password is incorrect. Use “Forgot password?” to reset the password.'
+       : 'Login failed: '+m;
+     return;
+   }
+   if(!data.user || data.user.id!==STAFF_UID){
+     await supabaseClient.auth.signOut();
+     msg.textContent='This account is not authorized for Staff/Admin access.';
+     return;
+   }
+   document.getElementById('adminLogin').style.display='none';
+   document.getElementById('resetPasswordBox').style.display='none';
+   document.getElementById('adminPanel').style.display='block';
+   msg.textContent='';
+   await renderAdmin();
+ }catch(err){
+   msg.textContent='Login error. Please refresh the page and try again.';
+   console.error(err);
+ }finally{
+   if(btn){btn.disabled=false;btn.textContent='Login'}
  }
- document.getElementById('adminLogin').style.display='none';
- document.getElementById('resetPasswordBox').style.display='none';
- document.getElementById('adminPanel').style.display='block';
- msg.textContent='';
- renderAdmin();
 }
 async function staffSignOut(){
  const msg=document.getElementById('staffLoginMsg');
