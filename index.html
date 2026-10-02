@@ -165,8 +165,9 @@ async function submitOrder(e){
    remoteSaved=true;
  }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
- const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('%0A');
- const msg='Daily Kitchen & Pub Order%0AOrder ID: '+encodeURIComponent(id)+'%0AName: '+encodeURIComponent(name)+'%0APhone: '+encodeURIComponent(phone)+'%0AType: '+encodeURIComponent(type)+(address?'%0AAddress: '+encodeURIComponent(address):'')+'%0A%0AItems:%0A'+lines+'%0A%0ATotal: '+encodeURIComponent(money(order.total))+(notes?'%0ANotes: '+encodeURIComponent(notes):'');
+ const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('\n');
+ const msgText='Daily Kitchen & Pub Order\nOrder ID: '+id+'\nName: '+name+'\nPhone: '+phone+'\nType: '+type+(address?'\nAddress: '+address:'')+'\n\nItems:\n'+lines+'\n\nTotal: '+money(order.total)+(notes?'\nNotes: '+notes:'');
+ const msg=encodeURIComponent(msgText);
  cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
  if(!remoteSaved) alert('Order saved on this device. Online sync is temporarily unavailable.');
  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
