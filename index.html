@@ -68,6 +68,7 @@
     <label>📍 Order type<select id="orderType" onchange="toggleAddress()"><option value="pickup">Pickup</option><option value="delivery">Delivery</option></select></label>
     <label id="addressWrap" style="display:none">📍 Delivery address<input id="deliveryAddress" placeholder="Delivery location/address"></label>
    </div>
+   <label style="display:block;margin-top:14px">💳 Payment method<select id="paymentMethod" required><option value="">Select payment method</option><option value="MTN MoMo">MTN MoMo</option><option value="Telecel Cash">Telecel Cash</option><option value="AirtelTigo Money">AirtelTigo Money</option><option value="Cash on Delivery">Cash on Delivery</option><option value="Pay at Pickup">Pay at Pickup</option></select></label>
    <label style="display:block;margin-top:14px">📝 Order notes<textarea id="orderNotes" rows="3" placeholder="Special instructions"></textarea></label>
    <p style="margin-top:16px"><strong>Order total:</strong> <span id="checkoutTotal" class="price">GHS 0.00</span></p>
    <button class="order-btn green" type="submit">📲 Place Order on WhatsApp</button>
@@ -141,8 +142,9 @@ async function submitOrder(e){
  if(!cart.length){alert('Please add at least one item to your cart.');location.hash='#menu';return}
  const type=document.getElementById('orderType').value,address=document.getElementById('deliveryAddress').value.trim();
  if(type==='delivery'&&!address){alert('Please enter your delivery address.');return}
- const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),notes=document.getElementById('orderNotes').value.trim();
- const order={id,name,phone,type,address,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
+ const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),paymentMethod=document.getElementById('paymentMethod').value,notes=document.getElementById('orderNotes').value.trim();
+ if(!paymentMethod){alert('Please select a payment method.');return}
+ const order={id,name,phone,type,address,paymentMethod,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
  let remoteSaved=false;
  try{
    const items=order.items.map(x=>({
@@ -157,7 +159,7 @@ async function submitOrder(e){
      p_customer_phone:phone,
      p_fulfillment_type:type,
      p_delivery_address:address||'',
-     p_order_notes:notes||'',
+     p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
      p_total_ghs:order.total,
      p_items:items
    });
@@ -166,7 +168,7 @@ async function submitOrder(e){
  }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
  const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('\n');
- const msgText='Daily Kitchen & Pub Order\nOrder ID: '+id+'\nName: '+name+'\nPhone: '+phone+'\nType: '+type+(address?'\nAddress: '+address:'')+'\n\nItems:\n'+lines+'\n\nTotal: '+money(order.total)+(notes?'\nNotes: '+notes:'');
+ const msgText='Daily Kitchen & Pub Order\nOrder ID: '+id+'\nName: '+name+'\nPhone: '+phone+'\nType: '+type+(address?'\nAddress: '+address:'')+'\nPayment Method: '+paymentMethod+'\n\nItems:\n'+lines+'\n\nTotal: '+money(order.total)+(notes?'\nNotes: '+notes:'');
  const msg=encodeURIComponent(msgText);
  cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
  if(!remoteSaved) alert('Order saved on this device. Online sync is temporarily unavailable.');
@@ -176,7 +178,7 @@ async function submitOrder(e){
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
- box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
+ box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+'</p></div>').join('')
 }
 async function staffLogin(){
  const email=document.getElementById('staffEmail').value.trim(),password=document.getElementById('staffPassword').value;
@@ -235,7 +237,7 @@ supabaseClient.auth.onAuthStateChange((event)=>{
 async function loadRemoteOrders(){
  const {data,error}=await supabaseClient.from('orders').select('id,order_code,customer_name,customer_phone,fulfillment_type,delivery_address,order_notes,total_ghs,status,created_at,order_items(item_name,unit_price_ghs,quantity,line_total_ghs)').order('created_at',{ascending:false});
  if(error)throw error;
- return (data||[]).map(o=>({id:o.order_code,name:o.customer_name,phone:o.customer_phone,type:o.fulfillment_type,address:o.delivery_address||'',notes:o.order_notes||'',total:Number(o.total_ghs),status:o.status,created:o.created_at,items:(o.order_items||[]).map(x=>({name:x.item_name,price:Number(x.unit_price_ghs),qty:Number(x.quantity),label:money(Number(x.unit_price_ghs))}))}));
+ return (data||[]).map(o=>{const rawNotes=o.order_notes||'';const pm=(rawNotes.match(/^Payment Method:\s*(.*)$/m)||[])[1]||'';const customerNotes=(rawNotes.match(/^Customer Notes:\s*(.*)$/m)||[])[1]||rawNotes.replace(/^Payment Method:\s*.*\n?/m,'');return {id:o.order_code,name:o.customer_name,phone:o.customer_phone,type:o.fulfillment_type,address:o.delivery_address||'',paymentMethod:pm,notes:customerNotes,total:Number(o.total_ghs),status:o.status,created:o.created_at,items:(o.order_items||[]).map(x=>({name:x.item_name,price:Number(x.unit_price_ghs),qty:Number(x.quantity),label:money(Number(x.unit_price_ghs))}))}));
 }
 async function setStatus(id,status){
  const local=JSON.parse(localStorage.getItem('dkp_orders')||'[]'),o=local.find(x=>x.id===id);
@@ -251,12 +253,12 @@ async function renderAdmin(){
  try{
    const orders=await loadRemoteOrders();
    if(!orders.length){box.innerHTML='<p>No orders received yet.</p>';return}
-   box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+   box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+(o.notes?'<br>📝 '+o.notes:'')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
  }catch(err){
    console.warn('Could not load online orders:',err);
    const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
    if(!orders.length){box.innerHTML='<p>No online orders available. Check Supabase order setup.</p>';return}
-   box.innerHTML='<p class="small">Online orders are temporarily unavailable. Showing orders saved on this device.</p>'+orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p></div>').join('');
+   box.innerHTML='<p class="small">Online orders are temporarily unavailable. Showing orders saved on this device.</p>'+orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+(o.notes?'<br>📝 '+o.notes:'')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p></div>').join('');
  }
 }
 document.querySelectorAll('.item').forEach(el=>{
