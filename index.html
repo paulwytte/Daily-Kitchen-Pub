@@ -21,6 +21,115 @@
 .status{display:inline-block;padding:5px 9px;border-radius:12px;background:#2b2208;color:var(--gold);font-weight:800;font-size:12px}
 .history-card{background:#0b0b0b;border:1px solid #444;border-radius:12px;padding:14px;margin:10px 0}
 @media(max-width:700px){.cart-line{grid-template-columns:1fr}.add-btn{margin-left:0}.order-bar{bottom:0}}
+
+/* Professional UI refresh */
+:root{
+ --gold:#d9ad45;--gold-light:#f4d98b;--gold-dark:#9b7424;
+ --black:#070707;--panel:#11110f;--panel-2:#171613;--line:#2d291f;
+ --muted:#b8b3a7;--green:#18a957;--red:#c62828;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:86px}
+body{
+ margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+ background:radial-gradient(circle at 50% -10%,#33260d 0,#0b0b0a 35%,#050505 100%);
+ color:#f7f5ef;line-height:1.55;
+}
+nav{
+ position:sticky;top:0;z-index:50;min-height:72px;padding:10px clamp(18px,5vw,72px);
+ background:rgba(7,7,7,.88);border-bottom:1px solid rgba(217,173,69,.22);
+ backdrop-filter:blur(18px);box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
+.brand{font-size:16px;letter-spacing:.2px}
+.brand img{width:44px;height:44px;border:1px solid rgba(217,173,69,.55);box-shadow:0 0 20px rgba(217,173,69,.15)}
+.links{gap:8px}
+.links a{padding:9px 11px;border-radius:10px;color:#ddd8cc;font-size:13px;font-weight:650;transition:.2s}
+.links a:hover{background:#1a1710;color:var(--gold-light)}
+.hero{
+ min-height:78vh;padding:72px 6%;position:relative;overflow:hidden;
+ background:radial-gradient(circle at 50% 35%,rgba(77,55,13,.7),rgba(8,8,8,.96) 62%);
+}
+.hero:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(217,173,69,.05),transparent);pointer-events:none}
+.hero>div{position:relative;z-index:1}
+.hero img{width:min(270px,62vw);border:1px solid rgba(244,217,139,.45);box-shadow:0 0 70px rgba(217,173,69,.2),0 25px 60px rgba(0,0,0,.45)}
+.hero h1{font-weight:900;letter-spacing:-1.5px;text-shadow:0 5px 30px #000;margin:24px 0 7px}
+.hero p{color:#ddd8cc}
+.hero .tag{color:var(--gold-light);font-weight:800}
+.btn,.order-btn{
+ border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 22px rgba(0,0,0,.28);
+ transition:transform .18s,box-shadow .18s,background .18s;
+}
+.btn:hover,.order-btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.4)}
+section{
+ max-width:1240px;padding:72px clamp(18px,5vw,64px);
+ background:transparent;
+}
+.heading{margin-bottom:38px}
+.heading h2{font-weight:900;letter-spacing:-.7px}
+.heading p{color:var(--gold-light);font-weight:650}
+.cards,.menu-grid{gap:20px}
+.card,.menu-card,.cart-box,.admin-box{
+ background:linear-gradient(180deg,rgba(24,23,20,.98),rgba(13,13,12,.98));
+ border:1px solid var(--line);box-shadow:0 16px 40px rgba(0,0,0,.25);
+}
+.card{padding:26px;border-radius:18px}
+.card h3,.menu-card h3{color:var(--gold-light)}
+.card:hover,.menu-card:hover{border-color:rgba(217,173,69,.4);transform:translateY(-2px);transition:.2s}
+.menu-card{padding:22px;border-radius:16px}
+.menu-card h3{border-bottom:1px solid rgba(217,173,69,.25);padding-bottom:12px}
+.item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07);gap:12px}
+.item>span:first-child{color:#eee9df}
+.price,.item-price{color:var(--gold-light);font-size:15px}
+.add-btn{background:var(--gold);padding:8px 11px;border-radius:9px;box-shadow:0 5px 14px rgba(217,173,69,.12)}
+.add-btn:hover{background:var(--gold-light);transform:translateY(-1px)}
+.menu-gallery{background:linear-gradient(180deg,#15140f,#0d0d0c);border:1px solid rgba(217,173,69,.28);box-shadow:0 16px 40px rgba(0,0,0,.25)}
+.gallery-card{background:#0a0a09;border:1px solid rgba(255,255,255,.07);transition:.2s}
+.gallery-card:hover{border-color:rgba(217,173,69,.4);transform:translateY(-2px)}
+.note{background:#17130a;border-left-color:var(--gold)}
+.event{background:linear-gradient(180deg,#0c0c0b,#12100b);max-width:none;border-top:1px solid rgba(217,173,69,.12);border-bottom:1px solid rgba(217,173,69,.12)}
+.contact{background:#080807;border-top:1px solid rgba(217,173,69,.16)}
+.phone{color:var(--gold-light)}
+.cart-box,.admin-box{border-radius:18px;padding:24px}
+.cart-line{padding:15px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.qty-row button{background:#24231f;color:#fff;border:1px solid #3b382f}
+.qty-row button:hover{background:var(--gold);color:#111}
+.form-grid{gap:18px}
+.form-grid input,.form-grid textarea,.form-grid select,
+#checkout input,#checkout textarea,#checkout select,
+#staff input{
+ width:100%;padding:13px 14px;margin-top:7px;border-radius:11px;border:1px solid #34322d;
+ background:#090908;color:#fff;outline:none;transition:.2s;
+}
+.form-grid input:focus,.form-grid textarea:focus,.form-grid select:focus,
+#checkout input:focus,#checkout textarea:focus,#checkout select:focus,
+#staff input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,173,69,.12)}
+.total{font-size:26px}
+.history-card{background:linear-gradient(180deg,#141411,#0d0d0c);border:1px solid #292821;border-radius:14px;padding:17px}
+.status{background:#241d0b;border:1px solid rgba(217,173,69,.25);color:var(--gold-light)}
+.order-bar{
+ padding:10px 16px;gap:8px;background:rgba(7,7,7,.9);
+ border-top:1px solid rgba(217,173,69,.3);box-shadow:0 -10px 30px rgba(0,0,0,.35);
+}
+.order-btn{padding:11px 16px;border-radius:12px}
+.order-btn.dark{background:#eee;color:#111}
+.order-btn.green{background:#159447}
+footer{border-top:1px solid rgba(255,255,255,.06)}
+@media(max-width:800px){
+ nav{min-height:64px}
+ .links{display:none}
+ .hero{min-height:70vh;padding:55px 18px}
+ .hero img{width:205px}
+ section{padding:55px 16px}
+ .heading h2{font-size:29px}
+ .menu-grid{grid-template-columns:1fr}
+ .cards{grid-template-columns:1fr}
+ .gallery-card{width:100%;margin:6px 0}
+ .order-bar{padding:8px 7px}
+ .order-bar .order-btn{flex:1;min-width:0;padding:10px 6px;font-size:12px}
+}
+@media(min-width:801px){
+ .menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style></head><body>
 <nav><div class="brand"><img src="logo.png" alt="Daily Kitchen & Pub logo"><span>Daily Kitchen & Pub</span></div><div class="links"><a href="#about">About</a><a href="#menu">🍛 Food</a><a href="#drinks">🥂 Drinks</a><a href="#cart">🛒 Cart</a><a href="#orders">📋 Orders</a><a href="#catering">Catering</a><a href="#contact">Contact</a></div></nav>
 <header class="hero"><div><img src="logo.png" alt="Daily Kitchen & Pub"><h1>Daily Kitchen & Pub</h1><p class="tag">Where Food and Hearts Connect ❤️</p><p>Authentic African cuisine • Great drinks • Catering • Delivery</p><a class="btn whatsapp" href="https://wa.me/233241936496?text=Hi%20Daily%20Kitchen%20%26%20Pub%2C%20I%27d%20like%20to%20place%20an%20order." target="_blank">Order on WhatsApp</a><a class="btn" href="#menu">View Prices</a></div></header>
