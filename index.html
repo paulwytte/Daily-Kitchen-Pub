@@ -197,7 +197,15 @@ footer{border-top:1px solid rgba(255,255,255,.06)}
     <label>📍 Order type<select id="orderType" onchange="toggleAddress()"><option value="pickup">Pickup</option><option value="delivery">Delivery</option></select></label>
     <label id="addressWrap" style="display:none">📍 Delivery address<input id="deliveryAddress" placeholder="Delivery location/address"></label>
    </div>
-   <label style="display:block;margin-top:14px">💳 Payment method<select id="paymentMethod" required><option value="">Select payment method</option><option value="MTN MoMo">MTN MoMo</option><option value="Telecel Cash">Telecel Cash</option><option value="AirtelTigo Money">AirtelTigo Money</option><option value="Cash on Delivery">Cash on Delivery</option><option value="Pay at Pickup">Pay at Pickup</option></select></label>
+   <label style="display:block;margin-top:14px">💳 Payment method<select id="paymentMethod" required onchange="togglePaymentFields()"><option value="">Select payment method</option><option value="MTN MoMo">MTN MoMo</option><option value="Telecel Cash">Telecel Cash</option><option value="AirtelTigo Money">AirtelTigo Money</option><option value="Cash on Delivery">Cash on Delivery</option><option value="Pay at Pickup">Pay at Pickup</option></select></label>
+<div id="momoPaymentBox" style="display:none;margin-top:14px;padding:16px;border:1px solid var(--gold);border-radius:14px;background:#17130a">
+ <strong style="color:var(--gold-light);font-size:17px">📱 MTN MoMo Payment</strong>
+ <p style="margin:8px 0">Send <strong id="momoAmount">GHS 0.00</strong> to:</p>
+ <p style="font-size:22px;font-weight:900;margin:4px 0">024 193 6496</p>
+ <p style="margin:4px 0">Account name: <strong>Paul Ababio</strong></p>
+ <p class="small" style="margin-top:10px;color:#ddd8cc">After payment, enter the MoMo Transaction ID below. Your order will remain <strong>Confirmed</strong> until the restaurant verifies the payment.</p>
+ <label style="display:block;margin-top:12px">🔢 MoMo Transaction ID<input id="momoTransactionId" type="text" autocomplete="off" placeholder="Enter transaction ID"></label>
+</div>
    <label style="display:block;margin-top:14px">📝 Order notes<textarea id="orderNotes" rows="3" placeholder="Special instructions"></textarea></label>
    <p style="margin-top:16px"><strong>Order total:</strong> <span id="checkoutTotal" class="price">GHS 0.00</span></p>
    <button class="order-btn green" type="submit">📲 Place Order on WhatsApp</button>
@@ -393,6 +401,15 @@ function renderCart(){
  box.innerHTML=cart.map((i,n)=>'<div class="cart-line"><div><strong>'+i.name+'</strong><br><span class="small">'+i.label+'</span></div><div class="qty-row"><button onclick="changeQty('+n+',-1)">−</button><span class="qty">'+i.qty+'</span><button onclick="changeQty('+n+',1)">+</button></div><strong class="price">'+money(i.price*i.qty)+'</strong></div>').join('')
 }
 function toggleAddress(){document.getElementById('addressWrap').style.display=document.getElementById('orderType').value==='delivery'?'block':'none'}
+function togglePaymentFields(){
+ const method=document.getElementById('paymentMethod').value;
+ const box=document.getElementById('momoPaymentBox');
+ const tx=document.getElementById('momoTransactionId');
+ if(box)box.style.display=method==='MTN MoMo'?'block':'none';
+ if(tx)tx.required=method==='MTN MoMo';
+ const amount=document.getElementById('momoAmount');
+ if(amount)amount.textContent=money(cartTotal());
+}
 function normalizePhone(p){p=p.replace(/\D/g,'');if(p.startsWith('0'))return '233'+p.slice(1);return p}
 async function submitOrder(e){
  e.preventDefault();
@@ -405,11 +422,13 @@ async function submitOrder(e){
  const phone=document.getElementById('customerPhone').value.trim();
  const paymentMethod=document.getElementById('paymentMethod').value;
  const notes=document.getElementById('orderNotes').value.trim();
+ const momoTransactionId=(document.getElementById('momoTransactionId')?.value||'').trim();
  if(!paymentMethod){alert('Please select a payment method.');return}
+ if(paymentMethod==='MTN MoMo'&&!momoTransactionId){alert('Please enter the MTN MoMo Transaction ID after making payment.');return}
 
  const order={
    id:id,name:name,phone:phone,type:type,address:address,
-   paymentMethod:paymentMethod,notes:notes,total:cartTotal(),
+   paymentMethod:paymentMethod,momoTransactionId:momoTransactionId,notes:notes,total:cartTotal(),
    items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()
  };
 
@@ -424,6 +443,8 @@ async function submitOrder(e){
    '📍 Order Type: '+(type==='delivery'?'Delivery':'Pickup'),
    ...(address?['📌 Address: '+address]:[]),
    '💳 Payment: '+paymentMethod,
+   ...(momoTransactionId?['🔢 MoMo Transaction ID: '+momoTransactionId]:[]),
+   ...(paymentMethod==='MTN MoMo'?['📱 MoMo Pay To: 024 193 6496 (Paul Ababio)']:[]),
    '',
    '🛒 ORDER ITEMS',
    itemLines,
@@ -454,7 +475,7 @@ async function submitOrder(e){
      body:JSON.stringify({
        p_order_code:id,p_customer_name:name,p_customer_phone:phone,
        p_fulfillment_type:type,p_delivery_address:address||'',
-       p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
+       p_order_notes:'Payment Method: '+paymentMethod+(momoTransactionId?'\nMoMo Transaction ID: '+momoTransactionId:'')+(notes?'\nCustomer Notes: '+notes:''),
        p_total_ghs:order.total,p_items:items
      })
    });
@@ -577,7 +598,7 @@ async function loadRemoteOrders(){
  if(!supabaseClient) throw new Error('Supabase unavailable');
  const {data,error}=await supabaseClient.from('orders').select('id,order_code,customer_name,customer_phone,fulfillment_type,delivery_address,order_notes,total_ghs,status,created_at,order_items(item_name,unit_price_ghs,quantity,line_total_ghs)').order('created_at',{ascending:false});
  if(error)throw error;
- return (data||[]).map(o=>{const rawNotes=o.order_notes||'';const pm=(rawNotes.match(/^Payment Method:\s*(.*)$/m)||[])[1]||'';const customerNotes=(rawNotes.match(/^Customer Notes:\s*(.*)$/m)||[])[1]||rawNotes.replace(/^Payment Method:\s*.*\n?/m,'');return {id:o.order_code,name:o.customer_name,phone:o.customer_phone,type:o.fulfillment_type,address:o.delivery_address||'',paymentMethod:pm,notes:customerNotes,total:Number(o.total_ghs),status:o.status,created:o.created_at,items:(o.order_items||[]).map(x=>({name:x.item_name,price:Number(x.unit_price_ghs),qty:Number(x.quantity),label:money(Number(x.unit_price_ghs))}))}));
+ return (data||[]).map(o=>{const rawNotes=o.order_notes||'';const pm=(rawNotes.match(/^Payment Method:\s*(.*)$/m)||[])[1]||'';const tx=(rawNotes.match(/^MoMo Transaction ID:\s*(.*)$/m)||[])[1]||'';const customerNotes=(rawNotes.match(/^Customer Notes:\s*(.*)$/m)||[])[1]||rawNotes.replace(/^Payment Method:\s*.*\n?/m,'');return {id:o.order_code,name:o.customer_name,phone:o.customer_phone,type:o.fulfillment_type,address:o.delivery_address||'',paymentMethod:pm,momoTransactionId:tx,notes:customerNotes,total:Number(o.total_ghs),status:o.status,created:o.created_at,items:(o.order_items||[]).map(x=>({name:x.item_name,price:Number(x.unit_price_ghs),qty:Number(x.quantity),label:money(Number(x.unit_price_ghs))}))}));
 }
 async function setStatus(id,status){
  const local=JSON.parse(localStorage.getItem('dkp_orders')||'[]'),o=local.find(x=>x.id===id);
@@ -593,7 +614,7 @@ async function renderAdmin(){
  try{
    const orders=await loadRemoteOrders();
    if(!orders.length){box.innerHTML='<p>No orders received yet.</p>';return}
-   box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+(o.notes?'<br>📝 '+o.notes:'')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
+   box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+(o.momoTransactionId?'<br>🔢 MoMo Transaction ID: '+o.momoTransactionId:'')+(o.notes?'<br>📝 '+o.notes:'')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p><div class="qty-row"><button onclick="setStatus(\''+o.id+'\',\'Confirmed\')">Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Payment Confirmed\')">Payment Confirmed</button><button onclick="setStatus(\''+o.id+'\',\'Preparing\')">Preparing</button><button onclick="setStatus(\''+o.id+'\',\'Ready/Delivered\')">Ready/Delivered</button><button onclick="setStatus(\''+o.id+'\',\'Cancelled\')">Cancel</button><button onclick="contactCustomer(\''+o.phone+'\',\''+o.name.replace(/'/g,"\\'")+'\',\''+o.id+'\')">📲 WhatsApp Customer</button></div></div>').join('')
  }catch(err){
    console.warn('Could not load online orders:',err);
    const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
@@ -601,7 +622,7 @@ async function renderAdmin(){
    box.innerHTML='<p class="small">Online orders are temporarily unavailable. Showing orders saved on this device.</p>'+orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>👤 '+o.name+' — '+o.phone+'<br>📍 '+(o.type==='delivery'?o.address:'Pickup')+'<br>💳 '+(o.paymentMethod||'Payment method not recorded')+(o.notes?'<br>📝 '+o.notes:'')+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong></p></div>').join('');
  }
 }
-renderCart();renderHistory();toggleAddress();restoreStaffSession();
+renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffSession();
 
 </script>
 <script>
