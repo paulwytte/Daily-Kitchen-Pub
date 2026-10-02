@@ -838,4 +838,38 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
   };
 })();
 </script>
-</body></html>
+<script>
+/* FINAL STAFF SIGN-OUT FIX */
+(function(){
+  var URL="https://wugmwunobthtidjrafek.supabase.co";
+  var KEY="sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF";
+  window.staffSignOut=async function(){
+    var msg=document.getElementById('staffLoginMsg');
+    var btn=document.querySelector('#adminPanel button[onclick="staffSignOut()"]');
+    if(btn){btn.disabled=true;btn.textContent='Signing out...';}
+    try{
+      var sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(URL,KEY):null;
+      if(sb) await sb.auth.signOut();
+      if(window.supabaseClient&&window.supabaseClient!==sb){
+        try{await window.supabaseClient.auth.signOut();}catch(e){}
+      }
+      var panel=document.getElementById('adminPanel');
+      var login=document.getElementById('adminLogin');
+      var reset=document.getElementById('resetPasswordBox');
+      if(panel)panel.style.display='none';
+      if(reset)reset.style.display='none';
+      if(login)login.style.display='block';
+      var pass=document.getElementById('staffPassword');
+      if(pass)pass.value='';
+      if(msg)msg.textContent='You have been signed out.';
+      location.hash='#staff';
+      window.scrollTo(0,document.getElementById('staff')?.offsetTop||0);
+    }catch(err){
+      console.error('Staff sign-out error:',err);
+      if(msg)msg.textContent='Sign out failed. Please try again.';
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Sign out';}
+    }
+  };
+})();
+</script></body></html>
