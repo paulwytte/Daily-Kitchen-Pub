@@ -397,23 +397,58 @@ function normalizePhone(p){p=p.replace(/\D/g,'');if(p.startsWith('0'))return '23
 async function submitOrder(e){
  e.preventDefault();
  if(!cart.length){alert('Please add at least one item to your cart.');location.hash='#menu';return}
- const type=document.getElementById('orderType').value,address=document.getElementById('deliveryAddress').value.trim();
+ const type=document.getElementById('orderType').value;
+ const address=document.getElementById('deliveryAddress').value.trim();
  if(type==='delivery'&&!address){alert('Please enter your delivery address.');return}
- const id='DKP-'+Date.now(),name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),paymentMethod=document.getElementById('paymentMethod').value,notes=document.getElementById('orderNotes').value.trim();
+ const id='DKP-'+Date.now();
+ const name=document.getElementById('customerName').value.trim();
+ const phone=document.getElementById('customerPhone').value.trim();
+ const paymentMethod=document.getElementById('paymentMethod').value;
+ const notes=document.getElementById('orderNotes').value.trim();
  if(!paymentMethod){alert('Please select a payment method.');return}
- const order={id,name,phone,type,address,paymentMethod,notes,total:cartTotal(),items:cart.map(x=>({...x})),status:'Confirmed',created:new Date().toISOString()};
- const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('\\n');
- const msgText='Daily Kitchen & Pub Order\\nOrder ID: '+id+'\\nName: '+name+'\\nPhone: '+phone+'\\nType: '+type+(address?'\\nAddress: '+address:'')+'\\nPayment Method: '+paymentMethod+'\\n\\nItems:\\n'+lines+'\\n\\nTotal: '+money(order.total)+(notes?'\\nNotes: '+notes:'');
+
+ const order={
+   id,name,phone,type,address,paymentMethod,notes,
+   total:cartTotal(),
+   items:cart.map(x=>({...x})),
+   status:'Confirmed',
+   created:new Date().toISOString()
+ };
+
+ // Build a WhatsApp message with real line breaks so the restaurant phone
+ // receives the complete order, customer details, items, quantities and total.
+ const lines=order.items.map(x=>'• '+x.qty+' x '+x.name+' — '+x.label).join('\\n');
+ const msgText=[
+   '🍽️ DAILY KITCHEN & PUB ORDER',
+   'Order ID: '+id,
+   '',
+   '👤 Customer: '+name,
+   '☎ Phone: '+phone,
+   '📍 Order Type: '+(type==='delivery'?'Delivery':'Pickup'),
+   ...(address?['📌 Address: '+address]:[]),
+   '💳 Payment: '+paymentMethod,
+   '',
+   '🛒 ORDER ITEMS',
+   lines,
+   '',
+   '💰 TOTAL: '+money(order.total),
+   ...(notes?['📝 Notes: '+notes]:[])
+ ].join('\\n');
  const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
 
- // Save locally immediately.
+ // Save the order locally first.
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
  orders.unshift(order);
  localStorage.setItem('dkp_orders',JSON.stringify(orders));
 
- // Sync to Supabase in the background; never wait for it before WhatsApp.
+ // Sync to Supabase in the background; WhatsApp does not wait for this.
  try{
-   const items=order.items.map(x=>({item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
+   const items=order.items.map(x=>({
+     item_name:x.name,
+     unit_price_ghs:x.price,
+     quantity:x.qty,
+     line_total_ghs:x.price*x.qty
+   }));
    if(supabaseClient){
      fetch(SUPABASE_URL+'/rest/v1/rpc/create_order',{
        method:'POST',
@@ -424,19 +459,28 @@ async function submitOrder(e){
          'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
        },
        body:JSON.stringify({
-         p_order_code:id,p_customer_name:name,p_customer_phone:phone,p_fulfillment_type:type,
+         p_order_code:id,
+         p_customer_name:name,
+         p_customer_phone:phone,
+         p_fulfillment_type:type,
          p_delivery_address:address||'',
-         p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
-         p_total_ghs:order.total,p_items:items
+         p_order_notes:'Payment Method: '+paymentMethod+(notes?'\\nCustomer Notes: '+notes:''),
+         p_total_ghs:order.total,
+         p_items:items
        })
      }).catch(err=>console.warn('Background order sync failed:',err));
    }
  }catch(err){console.warn('Background order sync could not start:',err)}
 
- cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();
+ cart=[];
+ saveCart();
+ document.getElementById('orderForm').reset();
+ toggleAddress();
+ renderHistory();
 
- // Direct navigation is more reliable on Android than a popup.
+ // Direct navigation opens WhatsApp with the full pre-filled order message.
  window.location.href=waUrl;
+}
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
