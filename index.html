@@ -243,13 +243,22 @@ footer{border-top:1px solid rgba(255,255,255,.06)}
 <script>
 window.DKP_CART_KEY='dkp_cart';
 window.DKP_addItem=function(name,price,label){
-  let c=[];
-  try{c=JSON.parse(localStorage.getItem(window.DKP_CART_KEY)||'[]')}catch(e){c=[]}
-  const x=c.find(i=>i.name===name&&i.label===label);
-  if(x)x.qty=Number(x.qty||0)+1;else c.push({name,price:Number(price)||0,label,qty:1});
-  localStorage.setItem(window.DKP_CART_KEY,JSON.stringify(c));
-  location.hash='#cart';
-  location.reload();
+  try{
+    let c=[];
+    try{c=JSON.parse(localStorage.getItem(window.DKP_CART_KEY)||'[]')}catch(e){c=[]}
+    const x=c.find(i=>i.name===name&&i.label===label);
+    if(x)x.qty=Number(x.qty||0)+1;
+    else c.push({name:String(name||'Item'),price:Number(price)||0,label:String(label||''),qty:1});
+    localStorage.setItem(window.DKP_CART_KEY,JSON.stringify(c));
+    const badge=document.getElementById('cartBadge');
+    if(badge)badge.textContent=c.reduce((a,i)=>a+Number(i.qty||0),0);
+    if(typeof renderCart==='function')renderCart();
+    location.hash='#cart';
+    window.scrollTo({top:document.getElementById('cart')?.offsetTop||0,behavior:'smooth'});
+  }catch(err){
+    console.error('ADD TO CART error:',err);
+    alert('ADD TO CART error. Please refresh the page and try again.');
+  }
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
