@@ -416,4 +416,55 @@ document.querySelectorAll('.item').forEach(el=>{
 });
 renderCart();renderHistory();toggleAddress();
 </script>
-</body></html>
+<script>
+(function(){
+  const KEY='dkp_cart';
+  function readCart(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}}
+  function writeCart(c){localStorage.setItem(KEY,JSON.stringify(c))}
+  function refresh(){
+    const c=readCart();
+    const total=c.reduce((s,i)=>s+(Number(i.price)||0)*(Number(i.qty)||0),0);
+    const count=c.reduce((s,i)=>s+(Number(i.qty)||0),0);
+    const badge=document.getElementById('cartBadge');
+    if(badge) badge.textContent=count;
+    const totalEl=document.getElementById('cartTotal');
+    const checkoutEl=document.getElementById('checkoutTotal');
+    if(totalEl) totalEl.textContent='GHS '+total.toFixed(2);
+    if(checkoutEl) checkoutEl.textContent='GHS '+total.toFixed(2);
+    const box=document.getElementById('cartItems');
+    if(!box)return;
+    if(!c.length){box.innerHTML='<p>Your cart is empty. Add food or drinks above.</p>';return}
+    box.innerHTML=c.map((i,n)=>'<div class="cart-line"><div><strong>'+String(i.name).replace(/</g,'&lt;')+'</strong><br><span class="small">'+String(i.label||'').replace(/</g,'&lt;')+'</span></div><div class="qty-row"><button type="button" data-q="-1" data-i="'+n+'">−</button><span class="qty">'+i.qty+'</span><button type="button" data-q="1" data-i="'+n+'">+</button></div><strong class="price">GHS '+((Number(i.price)||0)*(Number(i.qty)||0)).toFixed(2)+'</strong></div>').join('');
+    box.querySelectorAll('button[data-i]').forEach(b=>b.onclick=function(){
+      const x=readCart(),i=Number(this.dataset.i),d=Number(this.dataset.q);
+      if(!x[i])return;
+      x[i].qty=Number(x[i].qty||0)+d;
+      if(x[i].qty<=0)x.splice(i,1);
+      writeCart(x);refresh();
+    });
+  }
+  function add(name,price,label){
+    const c=readCart(),p=Number(price)||0,l=String(label||'');
+    const x=c.find(i=>i.name===name&&i.label===l);
+    if(x)x.qty=Number(x.qty||0)+1;else c.push({name:String(name||'Item'),price:p,label:l,qty:1});
+    writeCart(c);refresh();
+    location.hash='#cart';
+    setTimeout(function(){document.getElementById('cart')?.scrollIntoView({behavior:'smooth',block:'start'})},30);
+  }
+  window.DKP_addItem=add;
+  window.addItem=add;
+  window.clearCart=function(){writeCart([]);refresh()};
+  document.addEventListener('DOMContentLoaded',function(){
+    document.querySelectorAll('.add-btn').forEach(function(b){
+      b.onclick=function(e){
+        e.preventDefault();e.stopPropagation();
+        add(b.getAttribute('data-name')||b.closest('.item')?.querySelector('span')?.textContent||'Item',
+            b.getAttribute('data-price')||0,
+            b.getAttribute('data-label')||b.closest('.item')?.querySelector('.price')?.textContent||'');
+      };
+    });
+    refresh();
+  });
+  if(document.readyState!=='loading')refresh();
+})();
+</script>\n</body></html>
