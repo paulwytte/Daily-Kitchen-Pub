@@ -97,7 +97,7 @@
   <p id="resetPasswordMsg" class="small" style="margin-top:10px"></p>
  </div>
  <div class="admin-box" id="adminPanel" style="display:none">
-  <h3>👨🏾‍🍳 Order Dashboard</h3><div id="adminOrders"></div>
+  <h3>👨🏾‍🍳 Order Dashboard</h3><div style="margin:12px 0 18px"><button type="button" class="order-btn dark" onclick="staffSignOut()">🚪 Sign Out</button></div><div id="adminOrders"></div>
  </div>
 </section>
 <section class="event" id="catering"><div class="inner"><div class="heading"><h2>🎉 Catering & Events</h2><p style="color:#ddd">Book us for your special occasion.</p></div><div class="cards"><div class="card"><h3>Birthdays</h3><p>Food service for celebrations and gatherings.</p></div><div class="card"><h3>Weddings</h3><p>Discuss your food and catering needs with us.</p></div><div class="card"><h3>Corporate Events</h3><p>Food service for meetings, functions and corporate gatherings.</p></div><div class="card"><h3>Outdoor Catering</h3><p>Parties, outdoor events and other special occasions.</p></div></div></div></section>
@@ -193,6 +193,16 @@ async function staffLogin(){
  document.getElementById('adminPanel').style.display='block';
  msg.textContent='';
  renderAdmin();
+}
+async function staffSignOut(){
+ const msg=document.getElementById('staffLoginMsg');
+ await supabaseClient.auth.signOut();
+ document.getElementById('adminPanel').style.display='none';
+ document.getElementById('resetPasswordBox').style.display='none';
+ document.getElementById('adminLogin').style.display='block';
+ document.getElementById('staffPassword').value='';
+ if(msg)msg.textContent='You have been signed out.';
+ location.hash='#staff';
 }
 async function forgotPassword(){
  const email=document.getElementById('staffEmail').value.trim(),msg=document.getElementById('staffLoginMsg');
