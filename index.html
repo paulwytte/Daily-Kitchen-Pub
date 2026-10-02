@@ -439,29 +439,38 @@ async function submitOrder(e){
    localStorage.setItem('dkp_orders',JSON.stringify(orders));
  }catch(err){console.warn('Local order history save failed:',err)}
 
- // Start the online save without blocking WhatsApp.
+ // Save to Supabase BEFORE opening WhatsApp. This prevents the mobile browser
+ // from cancelling the request while it is navigating away.
  try{
+   if(!supabaseClient) throw new Error('Supabase connection is unavailable.');
    const items=order.items.map(x=>({item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
-   if(supabaseClient){
-     fetch(SUPABASE_URL+'/rest/v1/rpc/create_order',{
-       method:'POST',keepalive:true,
-       headers:{
-         'Content-Type':'application/json',
-         'apikey':SUPABASE_PUBLISHABLE_KEY,
-         'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
-       },
-       body:JSON.stringify({
-         p_order_code:id,p_customer_name:name,p_customer_phone:phone,
-         p_fulfillment_type:type,p_delivery_address:address||'',
-         p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
-         p_total_ghs:order.total,p_items:items
-       })
-     }).catch(err=>console.warn('Background order sync failed:',err));
+   const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/create_order',{
+     method:'POST',
+     headers:{
+       'Content-Type':'application/json',
+       'apikey':SUPABASE_PUBLISHABLE_KEY,
+       'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
+     },
+     body:JSON.stringify({
+       p_order_code:id,p_customer_name:name,p_customer_phone:phone,
+       p_fulfillment_type:type,p_delivery_address:address||'',
+       p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
+       p_total_ghs:order.total,p_items:items
+     })
+   });
+   if(!response.ok){
+     let detail='Supabase could not save the order.';
+     try{const data=await response.json();detail=data&&data.message?data.message:(data&&data.hint?data.hint:detail)}catch(_){}
+     throw new Error(detail);
    }
- }catch(err){console.warn('Background order sync could not start:',err)}
+ }catch(err){
+   console.error('Supabase order save failed:',err);
+   alert('Order was NOT sent yet.\n\nThe online order could not be saved to the restaurant system. Please try the button again after checking your internet connection.\n\nReason: '+(err.message||err));
+   return;
+ }
 
- // Do NOT clear the cart/history until after the WhatsApp link has been opened.
- const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
+ // Supabase confirmed the save, then open WhatsApp with the complete order.
+ const waUrl='https://api.whatsapp.com/send?phone='+WA+'&text='+encodeURIComponent(msgText);
  window.location.assign(waUrl);
 }function renderHistory(){
  const box=document.getElementById('orderHistory');
