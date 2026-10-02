@@ -178,6 +178,50 @@ function renderHistory(){
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
  box.innerHTML=orders.map(o=>'<div class="history-card"><strong>'+o.id+'</strong> <span class="status">'+o.status+'</span><p>'+new Date(o.created).toLocaleString()+'<br>'+o.items.map(x=>x.qty+' × '+x.name).join(', ')+'<br><strong>'+money(o.total)+'</strong><br>'+ (o.type==='delivery'?'📍 '+(o.address||''):'📍 Pickup')+'</p></div>').join('')
 }
+async function staffLogin(){
+ const email=document.getElementById('staffEmail').value.trim(),password=document.getElementById('staffPassword').value;
+ const msg=document.getElementById('staffLoginMsg'); msg.textContent='Signing in...';
+ const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+ if(error){msg.textContent='Login failed: '+error.message;return}
+ if(!data.user || data.user.id!=='06cab660-af20-49aa-abc4-4e0f2211826a'){
+   await supabaseClient.auth.signOut();
+   msg.textContent='This account is not authorized for Staff/Admin access.';
+   return
+ }
+ document.getElementById('adminLogin').style.display='none';
+ document.getElementById('resetPasswordBox').style.display='none';
+ document.getElementById('adminPanel').style.display='block';
+ msg.textContent='';
+ renderAdmin();
+}
+async function forgotPassword(){
+ const email=document.getElementById('staffEmail').value.trim(),msg=document.getElementById('staffLoginMsg');
+ if(!email){msg.textContent='Enter your staff email first.';return}
+ msg.textContent='Sending password reset email...';
+ const redirectTo=window.location.origin+window.location.pathname;
+ const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
+ msg.textContent=error?'Reset failed: '+error.message:'Password reset email sent. Check your email and open the reset link.';
+}
+async function saveNewPassword(){
+ const p=document.getElementById('newStaffPassword').value,c=document.getElementById('confirmStaffPassword').value,msg=document.getElementById('resetPasswordMsg');
+ if(p.length<6){msg.textContent='Password must be at least 6 characters.';return}
+ if(p!==c){msg.textContent='Passwords do not match.';return}
+ msg.textContent='Updating password...';
+ const {error}=await supabaseClient.auth.updateUser({password:p});
+ if(error){msg.textContent='Password update failed: '+error.message;return}
+ msg.textContent='Password changed successfully. You can now log in.';
+ document.getElementById('resetPasswordBox').style.display='none';
+ document.getElementById('adminLogin').style.display='block';
+ await supabaseClient.auth.signOut();
+}
+supabaseClient.auth.onAuthStateChange((event)=>{
+ if(event==='PASSWORD_RECOVERY'){
+   document.getElementById('adminLogin').style.display='none';
+   document.getElementById('adminPanel').style.display='none';
+   document.getElementById('resetPasswordBox').style.display='block';
+   document.getElementById('resetPasswordMsg').textContent='Enter and confirm your new password.';
+ }
+});
 async function loadRemoteOrders(){
  const {data,error}=await supabaseClient.from('orders').select('id,order_code,customer_name,customer_phone,fulfillment_type,delivery_address,order_notes,total_ghs,status,created_at,order_items(item_name,unit_price_ghs,quantity,line_total_ghs)').order('created_at',{ascending:false});
  if(error)throw error;
