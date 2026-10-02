@@ -221,7 +221,7 @@ footer{border-top:1px solid rgba(255,255,255,.06)}
 <section id="staff">
  <div class="heading"><h2>🔐 Staff / Admin</h2><p>Restaurant order management.</p></div>
  <div class="admin-box" id="adminLogin">
-  <label>Email <input id="staffEmail" type="email" value="linkwytte@gmail.com" autocomplete="username" placeholder="Staff email"></label>
+  <label>Email <input id="staffEmail" type="email" value="" autocomplete="username" placeholder="Staff email"></label>
   <label style="display:block;margin-top:12px">Password <input id="staffPassword" type="password" autocomplete="current-password" placeholder="Enter password"></label>
   <button class="order-btn" style="margin-top:12px" onclick="staffLogin()">Login</button>
   <button type="button" class="order-btn dark" style="margin-top:10px" onclick="forgotPassword()">Forgot password?</button>
@@ -861,6 +861,8 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
       if(login)login.style.display='block';
       var pass=document.getElementById('staffPassword');
       if(pass)pass.value='';
+      var email=document.getElementById('staffEmail');
+      if(email)email.value='';
       if(msg)msg.textContent='You have been signed out.';
       location.hash='#staff';
       window.scrollTo(0,document.getElementById('staff')?.offsetTop||0);
