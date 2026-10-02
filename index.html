@@ -406,37 +406,37 @@ async function submitOrder(e){
  const msgText='Daily Kitchen & Pub Order\\nOrder ID: '+id+'\\nName: '+name+'\\nPhone: '+phone+'\\nType: '+type+(address?'\\nAddress: '+address:'')+'\\nPayment Method: '+paymentMethod+'\\n\\nItems:\\n'+lines+'\\n\\nTotal: '+money(order.total)+(notes?'\\nNotes: '+notes:'');
  const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
 
- // Save the order locally first, then open WhatsApp immediately.
- // This prevents Supabase/network delays from blocking the WhatsApp handoff.
+ // Save locally immediately.
  const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
  orders.unshift(order);
  localStorage.setItem('dkp_orders',JSON.stringify(orders));
 
- let whatsappOpened=false;
- try{
-   const waWindow=window.open(waUrl,'_blank');
-   whatsappOpened=!!waWindow;
- }catch(err){console.warn('WhatsApp window open failed:',err)}
- if(!whatsappOpened){
-   // Fallback for browsers that block a new tab/window.
-   window.location.href=waUrl;
- }
-
- let remoteSaved=false;
+ // Sync to Supabase in the background; never wait for it before WhatsApp.
  try{
    const items=order.items.map(x=>({item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
-   const rpc=supabaseClient ? supabaseClient.rpc('create_order',{
-     p_order_code:id,p_customer_name:name,p_customer_phone:phone,p_fulfillment_type:type,
-     p_delivery_address:address||'',p_order_notes:'Payment Method: '+paymentMethod+(notes?'\\nCustomer Notes: '+notes:''),
-     p_total_ghs:order.total,p_items:items
-   });
-   const result=await Promise.race([rpc,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Order sync timeout')),8000))]);
-   if(result.error)throw result.error;
-   remoteSaved=true;
- }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
- cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
- if(!remoteSaved) console.warn('Order saved on this device. Online sync was unavailable.');
-}
+   if(supabaseClient){
+     fetch(SUPABASE_URL+'/rest/v1/rpc/create_order',{
+       method:'POST',
+       keepalive:true,
+       headers:{
+         'Content-Type':'application/json',
+         'apikey':SUPABASE_PUBLISHABLE_KEY,
+         'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
+       },
+       body:JSON.stringify({
+         p_order_code:id,p_customer_name:name,p_customer_phone:phone,p_fulfillment_type:type,
+         p_delivery_address:address||'',
+         p_order_notes:'Payment Method: '+paymentMethod+(notes?'\nCustomer Notes: '+notes:''),
+         p_total_ghs:order.total,p_items:items
+       })
+     }).catch(err=>console.warn('Background order sync failed:',err));
+   }
+ }catch(err){console.warn('Background order sync could not start:',err)}
+
+ cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();
+
+ // Direct navigation is more reliable on Android than a popup.
+ window.location.href=waUrl;
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
  if(!orders.length){box.innerHTML='<p>No orders yet.</p>';return}
