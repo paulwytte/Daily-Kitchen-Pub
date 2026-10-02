@@ -375,9 +375,17 @@ async function renderAdmin(){
  }
 }
 document.querySelectorAll('.item').forEach(el=>{
- const priceEl=el.querySelector('.price'); if(!priceEl)return;
- const name=el.querySelector('span:first-child').textContent.trim(),label=priceEl.textContent.trim(),price=priceFromText(label);
- const b=document.createElement('button');b.className='add-btn';b.textContent='ADD '+label;b.onclick=()=>addItem(name,price,label);el.appendChild(b)
+ const spans=el.querySelectorAll(':scope > span');
+ const priceEl=el.querySelector(':scope > .price');
+ if(!spans.length||!priceEl)return;
+ const name=spans[0].textContent.trim(),label=priceEl.textContent.trim(),price=priceFromText(label);
+ const oldBtn=el.querySelector(':scope > .add-btn');
+ if(oldBtn)oldBtn.remove();
+ const b=document.createElement('button');
+ b.type='button';b.className='add-btn';b.textContent='ADD TO CART';
+ b.setAttribute('aria-label','Add '+name+' to cart');
+ b.onclick=()=>addItem(name,price,label);
+ el.appendChild(b);
 });
 renderCart();renderHistory();toggleAddress();
 </script>
