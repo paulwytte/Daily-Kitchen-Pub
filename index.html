@@ -515,4 +515,148 @@ async function renderAdmin(){
 renderCart();renderHistory();toggleAddress();
 
 </script>
+<script>
+/* FINAL CART FALLBACK */
+(function(){
+  var KEY='dkp_cart';
+
+  function getCart(){
+    var raw=localStorage.getItem(KEY);
+    if(!raw)return [];
+    try{
+      var c=JSON.parse(raw);
+      return Array.isArray(c)?c:[];
+    }catch(e){return []}
+  }
+
+  function putCart(c){
+    localStorage.setItem(KEY,JSON.stringify(c));
+    drawCart();
+  }
+
+  function drawCart(){
+    var c=getCart(), total=0, count=0, i;
+    for(i=0;i<c.length;i++){
+      total+=(Number(c[i].price)||0)*(Number(c[i].qty)||0);
+      count+=Number(c[i].qty)||0;
+    }
+
+    var badge=document.getElementById('cartBadge');
+    var totalBox=document.getElementById('cartTotal');
+    var checkout=document.getElementById('checkoutTotal');
+    var box=document.getElementById('cartItems');
+
+    if(badge)badge.textContent=count;
+    if(totalBox)totalBox.textContent='GHS '+total.toFixed(2);
+    if(checkout)checkout.textContent='GHS '+total.toFixed(2);
+    if(!box)return;
+
+    if(c.length===0){
+      box.innerHTML='<p>Your cart is empty. Add food or drinks above.</p>';
+      return;
+    }
+
+    var html='';
+    for(i=0;i<c.length;i++){
+      var line=(Number(c[i].price)||0)*(Number(c[i].qty)||0);
+      html+='<div class="cart-line">'+
+        '<div><strong>'+String(c[i].name)+'</strong><br><span class="small">'+String(c[i].label||'')+'</span></div>'+
+        '<div class="qty-row">'+
+        '<button type="button" data-final-cart-index="'+i+'" data-final-cart-change="-1">−</button>'+
+        '<span class="qty">'+Number(c[i].qty||0)+'</span>'+
+        '<button type="button" data-final-cart-index="'+i+'" data-final-cart-change="1">+</button>'+
+        '</div>'+
+        '<strong class="price">GHS '+line.toFixed(2)+'</strong></div>';
+    }
+    box.innerHTML=html;
+  }
+
+  function add(name,price,label){
+    var c=getCart(), i, found=null;
+    name=String(name||'Item');
+    price=Number(price)||0;
+    label=String(label||('GHS '+price.toFixed(2)));
+
+    for(i=0;i<c.length;i++){
+      if(c[i].name===name && c[i].label===label){found=c[i];break;}
+    }
+    if(found)found.qty=Number(found.qty||0)+1;
+    else c.push({name:name,price:price,label:label,qty:1});
+
+    putCart(c);
+
+    var cart=document.getElementById('cart');
+    if(cart)cart.scrollIntoView({behavior:'smooth'});
+  }
+
+  window.DKP_addItem=add;
+  window.clearCart=function(){putCart([])};
+
+  document.addEventListener('click',function(e){
+    var el=e.target;
+    while(el && el!==document && !(' '+el.className+' ').indexOf(' add-btn ')>=0){el=el.parentNode;}
+    var btn=e.target.closest ? e.target.closest('.add-btn') : null;
+
+    if(btn){
+      e.preventDefault();
+      e.stopPropagation();
+
+      var item=btn.parentNode;
+      while(item && String(item.className).indexOf('item')===-1)item=item.parentNode;
+
+      var name=btn.getAttribute('data-name');
+      var price=Number(btn.getAttribute('data-price'));
+      var label=btn.getAttribute('data-label');
+
+      if(!name && item){
+        var spans=item.getElementsByTagName('span');
+        if(spans.length)name=spans[0].textContent.trim();
+      }
+      if(!label && item){
+        var prices=item.getElementsByClassName('price');
+        if(prices.length)label=prices[0].textContent.trim();
+      }
+      if(!price){
+        var m=String(label||'').replace(/,/g,'').match(/GHS\s*([0-9]+(?:\.[0-9]+)?)/i);
+        if(m)price=Number(m[1]);
+      }
+
+      add(name,price,label);
+      return;
+    }
+
+    var q=e.target.closest ? e.target.closest('[data-final-cart-index]') : null;
+    if(q){
+      var cart=getCart();
+      var index=Number(q.getAttribute('data-final-cart-index'));
+      var change=Number(q.getAttribute('data-final-cart-change'));
+      if(cart[index]){
+        cart[index].qty=Number(cart[index].qty||0)+change;
+        if(cart[index].qty<=0)cart.splice(index,1);
+        putCart(cart);
+      }
+    }
+  },true);
+
+  window.addEventListener('load',function(){
+    document.querySelectorAll('.add-btn').forEach(function(btn){
+      var item=btn.parentNode;
+      while(item && String(item.className).indexOf('item')===-1)item=item.parentNode;
+      if(item){
+        var spans=item.getElementsByTagName('span');
+        var prices=item.getElementsByClassName('price');
+        if(!btn.getAttribute('data-name') && spans.length)btn.setAttribute('data-name',spans[0].textContent.trim());
+        if(!btn.getAttribute('data-label') && prices.length)btn.setAttribute('data-label',prices[0].textContent.trim());
+        if(!btn.getAttribute('data-price')){
+          var m=String(btn.getAttribute('data-label')||'').replace(/,/g,'').match(/GHS\s*([0-9]+(?:\.[0-9]+)?)/i);
+          if(m)btn.setAttribute('data-price',m[1]);
+        }
+      }
+    });
+    drawCart();
+  });
+
+  drawCart();
+})();
+</script>
 </body></html>
