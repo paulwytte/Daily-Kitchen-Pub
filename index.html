@@ -405,6 +405,23 @@ async function submitOrder(e){
  const lines=order.items.map(x=>x.qty+' x '+x.name+' ('+x.label+')').join('\\n');
  const msgText='Daily Kitchen & Pub Order\\nOrder ID: '+id+'\\nName: '+name+'\\nPhone: '+phone+'\\nType: '+type+(address?'\\nAddress: '+address:'')+'\\nPayment Method: '+paymentMethod+'\\n\\nItems:\\n'+lines+'\\n\\nTotal: '+money(order.total)+(notes?'\\nNotes: '+notes:'');
  const waUrl='https://wa.me/'+WA+'?text='+encodeURIComponent(msgText);
+
+ // Save the order locally first, then open WhatsApp immediately.
+ // This prevents Supabase/network delays from blocking the WhatsApp handoff.
+ const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+ orders.unshift(order);
+ localStorage.setItem('dkp_orders',JSON.stringify(orders));
+
+ let whatsappOpened=false;
+ try{
+   const waWindow=window.open(waUrl,'_blank');
+   whatsappOpened=!!waWindow;
+ }catch(err){console.warn('WhatsApp window open failed:',err)}
+ if(!whatsappOpened){
+   // Fallback for browsers that block a new tab/window.
+   window.location.href=waUrl;
+ }
+
  let remoteSaved=false;
  try{
    const items=order.items.map(x=>({item_name:x.name,unit_price_ghs:x.price,quantity:x.qty,line_total_ghs:x.price*x.qty}));
@@ -417,10 +434,8 @@ async function submitOrder(e){
    if(result.error)throw result.error;
    remoteSaved=true;
  }catch(err){console.warn('Online order save failed; keeping local copy.',err)}
- const orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');orders.unshift(order);localStorage.setItem('dkp_orders',JSON.stringify(orders));
  cart=[];saveCart();document.getElementById('orderForm').reset();toggleAddress();renderHistory();renderAdmin();
  if(!remoteSaved) console.warn('Order saved on this device. Online sync was unavailable.');
- location.href=waUrl;
 }
 function renderHistory(){
  const box=document.getElementById('orderHistory'),orders=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
