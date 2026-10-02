@@ -1097,7 +1097,7 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
 </script>
 
 <script>
-/* CONFIRM ORDER CUSTOMER NOTIFICATION */
+/* ORDER STATUS CUSTOMER WHATSAPP NOTIFICATIONS */
 (function(){
   var WA_PREFIX='233';
   function normalize(phone){
@@ -1107,38 +1107,52 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
     if(p.charAt(0)==='0')return WA_PREFIX+p.slice(1);
     return p;
   }
+  function getOrder(id){
+    try{
+      var local=JSON.parse(localStorage.getItem('dkp_orders')||'[]');
+      if(Array.isArray(local)){
+        var found=local.find(function(x){return x.id===id});
+        if(found)return found;
+      }
+    }catch(e){}
+    return null;
+  }
+  function customerMessage(order,status){
+    var name=String(order.name||'Customer'), id=String(order.id||'');
+    if(status==='Confirmed')
+      return 'Hello '+name+', thank you for ordering from Daily Kitchen & Pub. Your order '+id+' has been received and confirmed. 🍽️ Your food will be ready in about 10–15 minutes. We will let you know when it is ready. Thank you for choosing Daily Kitchen & Pub! ❤️';
+    if(status==='Payment Confirmed')
+      return 'Hello '+name+', your payment for order '+id+' has been confirmed by Daily Kitchen & Pub. ✅ Thank you. Your order is now moving to the kitchen. 👨🏾‍🍳';
+    if(status==='Preparing')
+      return 'Hello '+name+', your order '+id+' is now being prepared by our kitchen. 👨🏾‍🍳🍽️ We will notify you when it is ready. Thank you for choosing Daily Kitchen & Pub! ❤️';
+    if(status==='Ready/Delivered')
+      return 'Hello '+name+', your order '+id+' is ready! 🎉🍽️ Please come for pickup or, if this is a delivery order, our team is arranging your delivery. Thank you for choosing Daily Kitchen & Pub! ❤️';
+    if(status==='Cancelled')
+      return 'Hello '+name+', we are sorry, but your order '+id+' has been cancelled. ❌ Please contact Daily Kitchen & Pub on WhatsApp if you need assistance. Thank you.';
+    return '';
+  }
   window.setStatus=async function(id,status){
-    var local=[];
-    try{local=JSON.parse(localStorage.getItem('dkp_orders')||'[]');if(!Array.isArray(local))local=[]}catch(e){local=[]}
-    var localOrder=local.find(function(x){return x.id===id});
-    if(localOrder){localOrder.status=status;localStorage.setItem('dkp_orders',JSON.stringify(local));}
-
+    var order=getOrder(id);
+    if(order){
+      order.status=status;
+      localStorage.setItem('dkp_orders',JSON.stringify(JSON.parse(localStorage.getItem('dkp_orders')||'[]')));
+    }
     var error=null;
     if(window.supabaseClient){
       try{
         var result=await window.supabaseClient.from('orders').update({status:status}).eq('order_code',id);
         error=result.error;
       }catch(e){error=e;}
-    }else{error=new Error('Supabase unavailable');}
+    }else error=new Error('Supabase unavailable');
     if(error)console.warn('Online status update failed:',error);
 
-    /* When staff presses Confirmed, open WhatsApp with the ready-time message. */
-    if(status==='Confirmed'){
-      var order=localOrder;
-      if(!order){
-        try{
-          var remote=await window.supabaseClient.from('orders').select('order_code,customer_name,customer_phone').eq('order_code',id).maybeSingle();
-          if(remote&&remote.data)order={id:remote.data.order_code,name:remote.data.customer_name,phone:remote.data.customer_phone};
-        }catch(e){}
-      }
-      if(order&&order.phone){
-        var customerName=String(order.name||'Customer');
-        var message='Hello '+customerName+', thank you for ordering from Daily Kitchen & Pub. Your order '+id+' has been received and confirmed. 🍽️ Your food will be ready in about 10–15 minutes. We will let you know when it is ready. Thank you for choosing Daily Kitchen & Pub! ❤️';
+    if(order&&order.phone){
+      var message=customerMessage(order,status);
+      if(message){
         var wa='https://wa.me/'+normalize(order.phone)+'?text='+encodeURIComponent(message);
         window.open(wa,'_blank','noopener');
       }
     }
-
     if(typeof renderHistory==='function')renderHistory();
     if(typeof renderAdmin==='function')await renderAdmin();
   };
