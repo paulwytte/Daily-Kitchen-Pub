@@ -771,4 +771,71 @@ renderCart();renderHistory();toggleAddress();togglePaymentFields();restoreStaffS
   drawCart();
 })();
 </script>
+<script>
+/* Admin login recovery: keep Staff/Admin usable even if an earlier page script fails. */
+(function(){
+  var SUPABASE_URL="https://wugmwunobthtidjrafek.supabase.co";
+  var SUPABASE_KEY="sb_publishable_YAQ40uAQ19J78AbLBjeG_Q__x5kwrlF";
+  var STAFF_EMAIL="linkwytte@gmail.com";
+  var STAFF_UID="06cab660-af20-49aa-abc4-4e0f2211826a";
+  function client(){
+    try{
+      if(window.supabase && window.supabase.createClient){
+        return window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+      }
+    }catch(e){}
+    return null;
+  }
+  window.staffLogin=async function(){
+    var emailEl=document.getElementById('staffEmail'), passEl=document.getElementById('staffPassword'), msg=document.getElementById('staffLoginMsg');
+    var email=(emailEl&&emailEl.value||'').trim().toLowerCase(), password=(passEl&&passEl.value||'');
+    if(!msg)return;
+    if(!email){msg.textContent='Enter the staff email.';return}
+    if(email!==STAFF_EMAIL){msg.textContent='Use the authorized staff email: '+STAFF_EMAIL;return}
+    if(!password){msg.textContent='Enter the staff password.';return}
+    var sb=client();
+    if(!sb){msg.textContent='Supabase is not loaded. Please refresh the page and try again.';return}
+    msg.textContent='Checking login...';
+    try{
+      var result=await sb.auth.signInWithPassword({email:email,password:password});
+      if(result.error)throw result.error;
+      var u=await sb.auth.getUser();
+      if(u.error)throw u.error;
+      var user=u.data&&u.data.user;
+      if(!user)throw new Error('No Supabase user session was returned.');
+      if(user.id!==STAFF_UID){
+        await sb.auth.signOut();
+        throw new Error('This account is not authorized for Staff/Admin access.');
+      }
+      var login=document.getElementById('adminLogin'), panel=document.getElementById('adminPanel'), reset=document.getElementById('resetPasswordBox');
+      if(login)login.style.display='none';
+      if(reset)reset.style.display='none';
+      if(panel)panel.style.display='block';
+      msg.textContent='';
+      if(typeof window.renderAdmin==='function')await window.renderAdmin();
+    }catch(err){
+      console.error('Admin login recovery:',err);
+      msg.textContent='Login failed: '+String(err&&err.message||err);
+    }
+  };
+  window.forgotPassword=async function(){
+    var emailEl=document.getElementById('staffEmail'), msg=document.getElementById('staffLoginMsg');
+    var email=(emailEl&&emailEl.value||'').trim().toLowerCase();
+    if(!msg)return;
+    if(!email){msg.textContent='Enter the staff email first.';return}
+    if(email!==STAFF_EMAIL){msg.textContent='Use the authorized staff email: '+STAFF_EMAIL;return}
+    var sb=client();
+    if(!sb){msg.textContent='Supabase is not loaded. Please refresh the page and try again.';return}
+    msg.textContent='Sending password reset email...';
+    try{
+      var redirectTo=window.location.origin+window.location.pathname;
+      var result=await sb.auth.resetPasswordForEmail(email,{redirectTo:redirectTo});
+      if(result.error)throw result.error;
+      msg.textContent='Password reset email sent. Check your email.';
+    }catch(err){
+      msg.textContent='Reset failed: '+String(err&&err.message||err);
+    }
+  };
+})();
+</script>
 </body></html>
